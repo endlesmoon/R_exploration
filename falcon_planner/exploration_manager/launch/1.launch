@@ -1,0 +1,25 @@
+<launch>
+  <arg name="mode" value="uav_simulator"/>
+  <arg name="map_name" default="complex_office"/>
+
+  <arg name="odometry_topic" value="/uav_simulator/odometry"/>
+  <arg name="sensor_pose_topic" value="/uav_simulator/sensor_pose"/>
+  <arg name="depth_image" value="/uav_simulator/depth_image"/>
+  <arg name="drone_num" value="2" />
+  <param name="drone_num"     value="2"/>
+
+  <!-- Load parameter for modules -->
+  <rosparam command="load" file="$(find exploration_manager)/config/map/$(arg map_name).yaml"/>
+  <node pkg="map_render" name="map_render_node" type="map_render_node" output="screen" />
+
+  <include file="$(find exploration_manager)/launch/1.xml">
+    <arg name="drone_id" value="1"/>
+    <arg name="init_x"   value="0"/>
+    <arg name="init_y"   value="0"/>
+  </include>
+  <include file="$(find exploration_manager)/launch/1.xml">
+    <arg name="drone_id" value="2"/>
+    <arg name="init_x"   value="1"/>
+    <arg name="init_y"   value="1"/>
+  </include>
+</launch>

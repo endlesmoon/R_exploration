@@ -1,0 +1,1 @@
+/usr/bin/g++ -fPIC  -std=c++14 -O3 -DNDEBUG -shared -Wl,-soname,libgmock_main.so -o ../lib/libgmock_main.so CMakeFiles/gmock_main.dir/src/gmock_main.cc.o  -Wl,-rpath,/home/ending20-bit/catkin_ws2/src/FALCON/uav_simulator/camera_sensing/mesh_render/build/gtest/lib ../lib/libgmock.so ../lib/libgtest.so -lpthread 

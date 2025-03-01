@@ -1,0 +1,17 @@
+Log file created at: 2025/02/28 11:18:31
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0228 11:18:31.301669  9319 exploration_fsm.cpp:94] [FSM] Receive odom from topic /uav_simulator/odometry
+W0228 11:18:31.301944  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712711.301948970 Transit state from INIT to WAIT_TRIGGER by FSM
+W0228 11:18:31.829265  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712711.829273179 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0228 11:18:31.853097  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712711.853101618 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0228 11:18:31.933462  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712711.933465342 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0228 11:18:32.153029  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.153031833 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0228 11:18:32.175410  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.175413263 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0228 11:18:32.205834  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.205837131 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0228 11:18:32.436174  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.436177126 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0228 11:18:32.460124  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.460126285 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0228 11:18:32.493043  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.493047831 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0228 11:18:32.717597  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.717598679 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0228 11:18:32.741814  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.741817184 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0228 11:18:32.772185  9319 exploration_fsm.cpp:917] [FSM] ROS Time: 1740712712.772187809 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM

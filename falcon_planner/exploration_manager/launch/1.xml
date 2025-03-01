@@ -1,0 +1,63 @@
+<launch>
+  <arg name="mode" value="uav_simulator"/>
+  <arg name="map_name" default="complex_office"/>
+
+  <arg name="odometry_topic" value="/uav_simulator/odometry"/>
+  <arg name="sensor_pose_topic" value="/uav_simulator/sensor_pose"/>
+  <arg name="depth_image" value="/uav_simulator/depth_image"/>
+  <arg name="drone_id" default="1"/>
+  <arg name="init_x"   default="0"/>
+  <arg name="init_y"   default="0"/>
+  <param name="drone_id" value="$(arg drone_id)"/>
+  <!-- Load parameter for modules -->
+  <rosparam command="load" file="$(find exploration_manager)/config/robot/uav_model_simulator.yaml"/>
+  <!-- <rosparam command="load" file="$(find exploration_manager)/config/map/$(arg map_name).yaml"/> -->
+  <rosparam command="load" file="$(find voxel_mapping)/config/voxel_mapping.yaml"/>
+  <rosparam command="load" file="$(find pathfinding)/config/astar.yaml"/>
+  <rosparam command="load" file="$(find fast_planner)/config/fast_planner.yaml"/>
+  <rosparam command="load" file="$(find exploration_preprocessing)/config/frontier_finder.yaml"/>
+  <rosparam command="load" file="$(find exploration_preprocessing)/config/hgrid.yaml"/>
+  <rosparam command="load" file="$(find exploration_utils)/config/perception_utils.yaml"/>
+  <rosparam command="load" file="$(find exploration_manager)/config/exploration_manager.yaml"/>
+
+  <!-- Launch exploration node -->
+  <node pkg="exploration_manager" name="exploration_node_$(arg drone_id)" type="exploration_node" output="log">
+    <param name="drone_id" value="$(arg drone_id)"/>
+    <remap from ="/odom_world" to="$(arg odometry_topic)_$(arg drone_id)"/>
+    <remap from ="/voxel_mapping/depth_image" to = "$(arg depth_image)_$(arg drone_id)"/>
+    <remap from ="/transformer/sensor_pose_topic"   to = "$(arg sensor_pose_topic)_$(arg drone_id)"/>
+    <remap from ="/planning/bspline" to = "/planning/bspline_$(arg drone_id)"/>
+    <remap from ="/planning/replan" to = "/planning/replan_$(arg drone_id)"/>
+    <remap from ="/voxel_mapping/occupancy_grid_occupied" to = "//voxel_mapping/occupancy_grid_occupied_$(arg drone_id)"/>
+  </node>
+
+  <!-- Launch trajectory server -->
+  <node pkg="fast_planner" name="traj_server_$(arg drone_id)" type="traj_server" output="log" >
+    <remap from="/planning/pos_cmd" to="/planning/pos_cmd_$(arg drone_id)"/>
+    <remap from ="/planning/bspline" to = "/planning/bspline_$(arg drone_id)"/>
+    <remap from ="/planning/replan" to = "/planning/replan_$(arg drone_id)"/>
+    <remap from ="/planning/position_cmd_vis" to = "/planning/position_cmd_vis_$(arg drone_id)"/>
+    <remap from ="/planning/travel_traj" to = "/planning/travel_traj_$(arg drone_id)"/>
+  </node>
+
+  <!-- Launch UAV Simulator if needed -->
+  <group if="$(eval 'true' if arg('mode')=='uav_simulator' else 'false')">
+    <!-- Map Render -->
+    <rosparam command="load" file="$(find pointcloud_render)/config/pointcloud_render.yaml"/>
+    <rosparam command="load" file="$(find mesh_render)/config/mesh_render.yaml"/>
+
+    <!-- Odometry Generator -->
+    <node pkg="poscmd_2_odom" name="poscmd_2_odom_$(arg drone_id)" type="poscmd_2_odom" output="log">
+      <param name="init_x"     value="$(arg init_x)"/>
+      <param name="init_y"     value="$(arg init_y)"/>
+      <remap from="~command" to="/planning/pos_cmd_$(arg drone_id)"/>
+      <remap from="~odometry" to="$(arg odometry_topic)_$(arg drone_id)"/>
+    </node>
+
+    <!-- Robot Visualier -->
+    <node pkg="odom_visualization" name="odom_visualization_$(arg drone_id)" type="odom_visualization" output="screen">
+      <remap from="~odometry" to="$(arg odometry_topic)"/>
+    </node>
+  </group>
+
+</launch>

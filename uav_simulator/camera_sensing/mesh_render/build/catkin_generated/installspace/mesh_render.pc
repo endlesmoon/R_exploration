@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: mesh_render
+Description: Description of mesh_render
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lmesh_render
+Requires: 
