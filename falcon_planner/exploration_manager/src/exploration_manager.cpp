@@ -114,15 +114,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
                                                      const Vector3d &acc, const Vector3d &yaw) {
   ros::Time t1 = ros::Time::now();
   const ros::Time plan_start_time = t1;
-  // Start planning
-  // ROS_INFO("[ExplorationManager] planExploreMotionHGrid start time: %f",
-  //          plan_start_time.toSec());
-  // ROS_INFO("[ExplorationManager] Start pos: %f, %f, %f, vel: %f, %f, %f, acc: %f, %f, %f",
-  //          pos.x(), pos.y(), pos.z(), vel.x(), vel.y(), vel.z(), acc.x(), acc.y(), acc.z());
-  // LOG(INFO) << "[ExplorationManager] Start pos: " << pos.transpose()
-  //           << ", vel: " << vel.transpose() << ", acc: " << acc.transpose();
 
-  // Clear previous exploration information
   clearExplorationData();
 
   // Do global and local tour planning and retrieve the next viewpoint
@@ -182,6 +174,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
                                            cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
+    cout<<endl<<"sfasfsafaf1: ";
+    for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
+    cout<<endl<<"sfasfsafaf2: ";
+    for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
 
   double hgrid_cost_matrix2_time = (ros::Time::now() - t1).toSec();
   double hgrid_tsp2_time = 0.0;
@@ -228,18 +224,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     grid_tour2_cost.clear();
     grid_tour2_cost.resize(indices.size());
 
-    // // print indices
-    // string indices_string;
-    // for (auto idx : indices) {
-    //   indices_string += std::to_string(idx) + ", ";
-    // }
-    // ROS_INFO("[ExplorationManager] Hgrid tour 2 indices: %s", indices_string.c_str());
+
 
     int last_index = 0;
-    //cout<<"sfasfasfa:  ";
-    //for(int i=0;i<hierarchical_grid_->uniform_grids.size();i++){
-     // cout<<hierarchical_grid_->uniform_grids_[0].uniform_grid_.size()<<endl;
-    //}
+
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     for (int i = 0; i < indices.size(); ++i) {
@@ -259,7 +247,6 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // i is mat id
       int cell_id = cell_id_center_id_pair.first;
       int center_id = cell_id_center_id_pair.second;
-      cout<<cell_id<<"  "<<center_id<<"  ";
       if (i == 0) {
         next_cell_id = cell_id;
         next_cell_id_grid_tour2 = cell_id;
@@ -283,7 +270,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       last_index = indices[i];
     }
     tsp_indices = indices;
-    cout<<endl;
+
     double grid_tour2_cost_sum = 0.0;
     for (auto cost : grid_tour2_cost) {
       grid_tour2_cost_sum += cost;
@@ -509,8 +496,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
                 ed_->points_[frontier_ids[i]], ed_->grid_tour2_[j], ed_->yaws_[frontier_ids[i]],
                 yaw_cp, Vector3d::Zero(), 0.0, path);
             if (checkPathUnknown(path) && cost1 < 499.0) {
-              // std::cout << "From " << frontier_ids[i] << " to " << j << " is unknown" <<
-              // std::endl;
+
               cost1 *= ep_->unknown_penalty_factor_;
             }
             path.clear();
@@ -541,8 +527,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     Eigen::MatrixXi cost_matrix_sop =
         Eigen::MatrixXi::Zero(ed_->grid_tour2_.size() + frontier_ids.size(),
                               ed_->grid_tour2_.size() + frontier_ids.size());
-    // cout << "cost_matrix_sop size:  " << cost_matrix_sop.rows() << "  " << cost_matrix_sop.cols()
-    //      << endl;
+
 
     // Precedence constraint, if grid_tour2_[i] is after grid_tour2_[j], then cost_mat[i,j] = -1
     for (int i = 0; i < ed_->grid_tour2_.size(); ++i) {
@@ -598,9 +583,6 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       cost_matrix_sop(i, 0) = -1;
     }
 
-    // print cost matrix sop
-    // std::cout << "Cost matrix sop:" << std::endl;
-    // std::cout << cost_matrix_sop << std::endl;
 
     // Remove next position from cost_matrix_sop
     Eigen::MatrixXi cost_matrix_sop_remove_next =
@@ -616,8 +598,6 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         cost_matrix_sop.block(2, 2, cost_matrix_sop_remove_next.rows() - 1,
                               cost_matrix_sop_remove_next.rows() - 1);
 
-    // std::cout << "Cost matrix sop no next:" << std::endl;
-    // std::cout << cost_matrix_sop_remove_next << std::endl;
 
     t1 = ros::Time::now();
     vector<int> sop_path;
@@ -936,7 +916,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         break;
     }
 
-    // cout << "getViewpointsInfo" << endl;
+
     // Get top N viewpoints for the next K frontiers
     frontier_finder_->getViewpointsInfo(pos, ed_->refined_ids_, ep_->top_view_num_, ep_->max_decay_,
                                         ed_->n_points_, ed_->n_yaws_);
@@ -945,7 +925,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
                ed_->refined_ids_[i], ed_->n_points_[i].size(), ed_->n_yaws_[i].size());
     }
 
-    // cout << "refineLocalTourHGrid" << endl;
+
     vector<double> refined_yaws;
     refineLocalTourHGrid(pos, vel, yaw, next_grid_pos, ed_->n_points_, ed_->n_yaws_,
                          ed_->refined_points_, refined_yaws);
@@ -1196,21 +1176,12 @@ EXPL_RESULT ExplorationManager::planTrajToView(const Vector3d &pos, const Vector
       }
     }
 
-    // print yaw_waypts_samples_gain
-    // std::cout << "yaw_waypts_samples_gain: " << std::endl;
-    // for (size_t i = 0; i < yaw_waypts_samples_gain.size(); ++i) {
-    //   for (size_t j = 0; j < yaw_waypts_samples_gain[i].size(); ++j) {
-    //     std::cout << yaw_waypts_samples_gain[i][j] << " ";
-    //   }
-    //   std::cout << std::endl;
-    // }
 
     int dim = yaw_waypts_samples.size() * yaw_waypts_samples[0].size() + 2;
     vector<vector<double>> cost_matrix_yaw_waypts(dim, vector<double>(dim, 1000.0));
 
     double max_yaw_change_seg = dt_yaw * PathCostEvaluator::yd_ * seg_skip_num;
-    // double max_yaw_change_seg = 2 * M_PI;
-    // std::cout << "max_yaw_change_seg: " << max_yaw_change_seg << std::endl;
+
     for (size_t i = 0; i < yaw_waypts_samples.size(); ++i) {
       // i-th waypt samples
       const std::vector<double> &yaw_waypt_samples = yaw_waypts_samples[i];
@@ -1250,20 +1221,7 @@ EXPL_RESULT ExplorationManager::planTrajToView(const Vector3d &pos, const Vector
       }
     }
 
-    // std::cout << "cost_matrix_yaw_waypts: " << std::endl;
-    // for (size_t i = 0; i < cost_matrix_yaw_waypts.size(); ++i) {
-    //   for (size_t j = 0; j < cost_matrix_yaw_waypts[i].size(); ++j) {
-    //     std::cout << cost_matrix_yaw_waypts[i][j] << " ";
-    //   }
-    //   std::cout << std::endl;
-    // }
-
     vector<int> yaw_waypts_path_idx = dijkstra(cost_matrix_yaw_waypts, 0, dim - 1);
-    // std::cout << "yaw_waypts_path_idx: " << std::endl;
-    // for (size_t i = 0; i < yaw_waypts_path_idx.size(); ++i) {
-    //   std::cout << yaw_waypts_path_idx[i] << " ";
-    // }
-    // std::cout << std::endl;
 
     if (yaw_waypts_path_idx.size() > 1) {
       for (const int &idx : yaw_waypts_path_idx) {
@@ -1278,19 +1236,7 @@ EXPL_RESULT ExplorationManager::planTrajToView(const Vector3d &pos, const Vector
       }
     }
 
-    // std::cout << "start yaw_waypts end: " << std::endl;
-    // std::cout << start_yaw << " ";
-    // for (size_t i = 0; i < yaw_waypts.size(); ++i) {
-    //   std::cout << yaw_waypts[i].x() << " ";
-    // }
-    // std::cout << goal_yaw << std::endl;
-    // std::cout << std::endl;
 
-    // std::cout << "yaw_waypts_idx: " << std::endl;
-    // for (size_t i = 0; i < yaw_waypts_idx.size(); ++i) {
-    //   std::cout << yaw_waypts_idx[i] << " ";
-    // }
-    // std::cout << std::endl;
 
     // modify yaw waypoints and goal yaw to be smooth
     for (size_t i = 0; i < yaw_waypts.size(); ++i) {
@@ -1339,13 +1285,6 @@ EXPL_RESULT ExplorationManager::planTrajToView(const Vector3d &pos, const Vector
       }
     }
 
-    // std::cout << "start yaw_waypts end modified: " << std::endl;
-    // std::cout << start_yaw << " ";
-    // for (size_t i = 0; i < yaw_waypts.size(); ++i) {
-    //   std::cout << yaw_waypts[i].x() << " ";
-    // }
-    // std::cout << goal_yaw << std::endl;
-    // std::cout << std::endl;
   }
 
   yaw_waypts.clear();
@@ -1810,11 +1749,9 @@ for (int i = 0; i < grid_ids.size(); ++i) {
   int unum = hierarchical_grid_->getUnknownCellsNum(grid_ids[i]);
   unknown_nums.push_back(unum);
   capacity += unum;
-  // std::cout << "Grid " << i << ": " << unum << std::endl;
 }
-// std::cout << "Total: " << capacity << std::endl;
+
 capacity = capacity * 0.75 * 0.1;
-cout<<mat.rows()<<"sdasdsa"<<endl;
 // int prob_type;
 // if (grid_ids.size() >= 3)
 //   prob_type = 2;  // Use ACVRP
@@ -1861,7 +1798,6 @@ if (prob_type == 2) {  // Demand section, ACVRP only
   //   file << to_string(i + 2 + drone_num) + " " + to_string(grid_unknown) + "\n";
   // }
   for (int i = 0; i < dimension-drone_num; ++i) {
-    //if(i<20) cout<<"sdsadasda"<<unknown_nums[i]<<endl;
     int grid_unknown = 5000;
     file << to_string(i + 1 + drone_num) + " " + to_string(grid_unknown) + "\n";
   }

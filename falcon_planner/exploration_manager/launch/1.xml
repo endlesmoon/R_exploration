@@ -31,6 +31,10 @@
     <remap from ="/voxel_mapping/occupancy_grid_occupied" to = "//voxel_mapping/occupancy_grid_occupied_$(arg drone_id)"/>
     <remap from="/swarm_expl/drone_state_send" to="/swarm_expl/drone_state" />
     <remap from="/swarm_expl/drone_state_recv" to="/swarm_expl/drone_state" />
+    <remap from="/swarm_expl/pair_opt_send" to="/swarm_expl/pair_opt" />
+    <remap from="/swarm_expl/pair_opt_recv" to="/swarm_expl/pair_opt" />
+    <remap from="/swarm_expl/pair_opt_res_send" to="/swarm_expl/pair_opt_res" />
+    <remap from="/swarm_expl/pair_opt_res_recv" to="/swarm_expl/pair_opt_res" />
     <param name="exploration/mtsp_dir" value="$(find lkh_mtsp_solver)/resource" type="string"/>
   </node>
 

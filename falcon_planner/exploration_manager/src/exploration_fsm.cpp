@@ -980,7 +980,7 @@ void ExplorationFSM::droneStateMsgCallback(const exploration_manager::DroneState
 
   auto& drone_state = expl_manager_->ed_->swarm_state_[msg->drone_id - 1];
   if (drone_state.stamp_ + 1e-4 >= msg->stamp) return;  // Avoid unordered msg
-  cout<<"sfgagaz"<<endl;
+
   drone_state.pos_ = Eigen::Vector3d(msg->pos[0], msg->pos[1], msg->pos[2]);
   drone_state.vel_ = Eigen::Vector3d(msg->vel[0], msg->vel[1], msg->vel[2]);
   drone_state.yaw_ = msg->yaw;
@@ -1022,7 +1022,7 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   }
   if (select_id == -1) return;
 
-  std::cout << "\nSelect: " << select_id << std::endl;
+  // std::cout << "\nSelect: " << select_id << std::endl;
   ROS_WARN("Pair opt %d & %d", getId(), select_id);
   // Do pairwise optimization with selected drone, allocate the union of their domiance grids
   unordered_map<int, char> opt_ids_map;
@@ -1032,17 +1032,17 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   vector<int> opt_ids;
   for (auto pair : opt_ids_map) opt_ids.push_back(pair.first);
 
-  std::cout << "Pair Opt id: ";
-  for (auto id : opt_ids) std::cout << id << ", ";
-  std::cout << "" << std::endl;
+  // std::cout << "Pair Opt id: ";
+  // for (auto id : opt_ids) std::cout << id << ", ";
+  // std::cout << "" << std::endl;
 
   // Find missed grids to reallocated them
   vector<int> actives, missed;
   expl_manager_->hierarchical_grid_->getLayerActiveCellIds(0,actives);
   findUnallocated(actives, missed);
-  std::cout << "Missed: ";
-  for (auto id : missed) std::cout << id << ", ";
-  std::cout << "" << std::endl;
+  //std::cout << "Missed: ";
+  //for (auto id : missed) std::cout << id << ", ";
+ // std::cout << "" << std::endl;
   opt_ids.insert(opt_ids.end(), missed.begin(), missed.end());
   // Do partition of the grid
   vector<Eigen::Vector3d> positions = { state1.pos_, state2.pos_  };
