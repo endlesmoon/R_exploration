@@ -36,6 +36,11 @@ struct FSMParam {
   double replan_duration_fast_;
   double replan_duration_default_;
   double replan_duration_slow_;
+
+  // Swarm
+  double attempt_interval_;   // Min interval of opt attempt
+  double pair_opt_interval_;  // Min interval of successful pair opt
+  int repeat_send_num_;  
 };
 
 struct DroneState {
@@ -123,7 +128,7 @@ struct ExplorationParam {
   ///@@@@@@@@@@@@@@@
   int drone_num_;
   int drone_id_;
-
+  string mtsp_dir_;  // resource dir of tsp solver
 };
 
 struct ExplorationExpData {

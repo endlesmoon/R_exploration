@@ -55,13 +55,23 @@ void ExplorationFSM::init(ros::NodeHandle &nh) {
 
 
 /////&&&&&&&&&&&&&&&&&&&&&&
+nh.param("/exploration_manager/attempt_interval", fp_->attempt_interval_, 0.2);
+nh.param("/exploration_manager/pair_opt_interval", fp_->pair_opt_interval_, 1.0);
+nh.param("/exploration_manager/repeat_send_num", fp_->repeat_send_num_, 10);
 drone_state_pub_ =
 nh.advertise<exploration_manager::DroneState>("/swarm_expl/drone_state_send", 10);
 drone_state_timer_ =
 nh.createTimer(ros::Duration(0.04), &ExplorationFSM::droneStateTimerCallback, this);
-
-
-
+drone_state_sub_ = nh.subscribe(
+  "/swarm_expl/drone_state_recv", 10, &ExplorationFSM::droneStateMsgCallback, this);
+opt_timer_ = nh.createTimer(ros::Duration(0.05), &ExplorationFSM::optTimerCallback, this);
+opt_pub_ = nh.advertise<exploration_manager::PairOpt>("/swarm_expl/pair_opt_send", 10);
+opt_sub_ = nh.subscribe("/swarm_expl/pair_opt_recv", 100, &ExplorationFSM::optMsgCallback,
+  this, ros::TransportHints().tcpNoDelay());
+opt_res_pub_ =
+    nh.advertise<exploration_manager::PairOptResponse>("/swarm_expl/pair_opt_res_send", 10);
+opt_res_sub_ = nh.subscribe("/swarm_expl/pair_opt_res_recv", 100,
+  &ExplorationFSM::optResMsgCallback, this, ros::TransportHints().tcpNoDelay());
 }
 
 void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
@@ -938,7 +948,6 @@ void ExplorationFSM::droneStateTimerCallback(const ros::TimerEvent& e) {
   exploration_manager::DroneState msg;
   msg.drone_id = getId();
   auto& state = expl_manager_->ed_->swarm_state_[msg.drone_id - 1];
-
   if (fd_->static_state_) {
     state.pos_ = fd_->odom_pos_;
     state.vel_ = fd_->odom_vel_;
@@ -961,13 +970,254 @@ void ExplorationFSM::droneStateTimerCallback(const ros::TimerEvent& e) {
   drone_state_pub_.publish(msg);
 }
 
+void ExplorationFSM::droneStateMsgCallback(const exploration_manager::DroneStateConstPtr& msg) {
+  // Update other drones' states
+  if (msg->drone_id == getId()) return;
 
-//&&&&&&&&&&&&&&
+  // Simulate swarm communication loss
+  Eigen::Vector3d msg_pos(msg->pos[0], msg->pos[1], msg->pos[2]);
+  // if ((msg_pos - fd_->odom_pos_).norm() > 6.0) return;
+
+  auto& drone_state = expl_manager_->ed_->swarm_state_[msg->drone_id - 1];
+  if (drone_state.stamp_ + 1e-4 >= msg->stamp) return;  // Avoid unordered msg
+  cout<<"sfgagaz"<<endl;
+  drone_state.pos_ = Eigen::Vector3d(msg->pos[0], msg->pos[1], msg->pos[2]);
+  drone_state.vel_ = Eigen::Vector3d(msg->vel[0], msg->vel[1], msg->vel[2]);
+  drone_state.yaw_ = msg->yaw;
+  drone_state.grid_ids_.clear();
+  for (auto id : msg->grid_ids) drone_state.grid_ids_.push_back(id);
+  drone_state.stamp_ = msg->stamp;
+  drone_state.recent_attempt_time_ = msg->recent_attempt_time;
+
+}
+
+void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
+  if (state_ == INIT) return;
+  // Select nearby drone not interacting with recently
+  auto& states = expl_manager_->ed_->swarm_state_;
+  auto& state1 = states[getId() - 1];
+  // bool urgent = (state1.grid_ids_.size() <= 1 /* && !state1.grid_ids_.empty() */);
+  bool urgent = state1.grid_ids_.empty();
+  auto tn = ros::Time::now().toSec();
+  // Avoid frequent attempt
+  if (tn - state1.recent_attempt_time_ < fp_->attempt_interval_) return;
+  
+  int select_id = -1;
+  double max_interval = -1.0;
+  for (int i = 0; i < states.size(); ++i) {
+    if (i + 1 <= getId()) continue;
+    // Check if have communication recently
+    // or the drone just experience another opt
+    // or the drone is interacted with recently /* !urgent &&  */
+    // or the candidate drone dominates enough grids
+    if (tn - states[i].stamp_ > 0.2) continue;
+    if (tn - states[i].recent_attempt_time_ < fp_->attempt_interval_) continue;
+    if (tn - states[i].recent_interact_time_ < fp_->pair_opt_interval_) continue;
+    if (states[i].grid_ids_.size() + state1.grid_ids_.size() == 0) continue;
+    
+    double interval = tn - states[i].recent_interact_time_;
+    if (interval <= max_interval) continue;
+    select_id = i + 1;
+    max_interval = interval;
+  }
+  if (select_id == -1) return;
+
+  std::cout << "\nSelect: " << select_id << std::endl;
+  ROS_WARN("Pair opt %d & %d", getId(), select_id);
+  // Do pairwise optimization with selected drone, allocate the union of their domiance grids
+  unordered_map<int, char> opt_ids_map;
+  auto& state2 = states[select_id - 1];
+  for (auto id : state1.grid_ids_) opt_ids_map[id] = 1;
+  for (auto id : state2.grid_ids_) opt_ids_map[id] = 1;
+  vector<int> opt_ids;
+  for (auto pair : opt_ids_map) opt_ids.push_back(pair.first);
+
+  std::cout << "Pair Opt id: ";
+  for (auto id : opt_ids) std::cout << id << ", ";
+  std::cout << "" << std::endl;
+
+  // Find missed grids to reallocated them
+  vector<int> actives, missed;
+  expl_manager_->hierarchical_grid_->getLayerActiveCellIds(0,actives);
+  findUnallocated(actives, missed);
+  std::cout << "Missed: ";
+  for (auto id : missed) std::cout << id << ", ";
+  std::cout << "" << std::endl;
+  opt_ids.insert(opt_ids.end(), missed.begin(), missed.end());
+  // Do partition of the grid
+  vector<Eigen::Vector3d> positions = { state1.pos_, state2.pos_  };
+  vector<Eigen::Vector3d> velocities = { Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0) };
+
+                  
+  auto t1 = ros::Time::now();
+
+  vector<int> ego_ids, other_ids;
+  expl_manager_->allocateGrids(positions, velocities, opt_ids, ego_ids, other_ids);
+  double alloc_time = (ros::Time::now() - t1).toSec();
+
+  // // Check results
+  // double prev_app1 = expl_manager_->computeGridPathCost(state1.pos_, state1.grid_ids_, first_ids1,
+  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
+  // double prev_app2 = expl_manager_->computeGridPathCost(state2.pos_, state2.grid_ids_, first_ids2,
+  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
+  // std::cout << "prev cost: " << prev_app1 << ", " << prev_app2 << ", " << prev_app1 + prev_app2
+  //           << std::endl;
+  // double cur_app1 = expl_manager_->computeGridPathCost(state1.pos_, ego_ids, first_ids1,
+  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
+  // double cur_app2 = expl_manager_->computeGridPathCost(state2.pos_, other_ids, first_ids2,
+  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
+  // std::cout << "cur cost : " << cur_app1 << ", " << cur_app2 << ", " << cur_app1 + cur_app2
+  //           << std::endl;
+  // if (cur_app1 + cur_app2 > prev_app1 + prev_app2 + 0.1) {
+  //   ROS_ERROR("Larger cost after reallocation");
+  //   if (state_!=WAIT_TRIGGER) {
+  //     return;
+  //   }
+  // }
+
+  // if (!state1.grid_ids_.empty() && !ego_ids.empty() &&
+  //     !expl_manager_->hgrid_->isConsistent(state1.grid_ids_[0], ego_ids[0])) {
+  //   ROS_ERROR("Path 1 inconsistent");
+  // }
+  // if (!state2.grid_ids_.empty() && !other_ids.empty() &&
+  //     !expl_manager_->hgrid_->isConsistent(state2.grid_ids_[0], other_ids[0])) {
+  //   ROS_ERROR("Path 2 inconsistent");
+  // }
+
+  // Update ego and other dominace grids
+  auto last_ids2 = state2.grid_ids_;
+
+  // Send the result to selected drone and wait for confirmation
+  exploration_manager::PairOpt opt;
+  opt.from_drone_id = getId();
+  opt.to_drone_id = select_id;
+  // opt.msg_type = 1;
+  opt.stamp = tn;
+  for (auto id : ego_ids) opt.ego_ids.push_back(id);
+  for (auto id : other_ids) opt.other_ids.push_back(id);
+
+  for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_pub_.publish(opt);
+
+  //ROS_WARN("Drone %d send opt request to %d, pair opt t: %lf, allocate t: %lf", getId(), select_id,
+      //ros::Time::now().toSec() - tn, alloc_time);
+
+  // Reserve the result and wait...
+  auto ed = expl_manager_->ed_;
+  ed->ego_ids_ = ego_ids;
+  ed->other_ids_ = other_ids;
+  ed->pair_opt_stamp_ = opt.stamp;
+  ed->wait_response_ = true;
+  state1.recent_attempt_time_ = tn;
+}
+
+void ExplorationFSM::optMsgCallback(const exploration_manager::PairOptConstPtr& msg) {
+  if (msg->from_drone_id == getId() || msg->to_drone_id != getId()) return;
+
+  // Check stamp to avoid unordered/repeated msg
+  if (msg->stamp <= expl_manager_->ed_->pair_opt_stamps_[msg->from_drone_id - 1] + 1e-4) return;
+  expl_manager_->ed_->pair_opt_stamps_[msg->from_drone_id - 1] = msg->stamp;
+
+  auto& state1 = expl_manager_->ed_->swarm_state_[msg->from_drone_id - 1];
+  auto& state2 = expl_manager_->ed_->swarm_state_[getId() - 1];
+
+  // auto tn = ros::Time::now().toSec();
+  exploration_manager::PairOptResponse response;
+  response.from_drone_id = msg->to_drone_id;
+  response.to_drone_id = msg->from_drone_id;
+  response.stamp = msg->stamp;  // reply with the same stamp for verificaiton
+
+  if (msg->stamp - state2.recent_attempt_time_ < fp_->attempt_interval_) {
+    // Just made another pair opt attempt, should reject this attempt to avoid frequent changes
+    ROS_WARN("Reject frequent attempt");
+    response.status = 2;
+  } else {
+    // No opt attempt recently, and the grid info between drones are consistent, the pair opt
+    // request can be accepted
+    response.status = 1;
+
+    // Update from the opt result
+    state1.grid_ids_.clear();
+    state2.grid_ids_.clear();
+    for (auto id : msg->ego_ids) state1.grid_ids_.push_back(id);
+    for (auto id : msg->other_ids) state2.grid_ids_.push_back(id);
+
+    state1.recent_interact_time_ = msg->stamp;
+    state2.recent_attempt_time_ = ros::Time::now().toSec();
+    expl_manager_->ed_->reallocated_ = true;
+
+    // if (state_ == IDLE && !state2.grid_ids_.empty()) {
+    //   transitState(PLAN_TRAJ, "optMsgCallback");
+    //   ROS_WARN("Restart after opt!");
+    // }
+
+
+  }
+  for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_res_pub_.publish(response);
+}
+
+
+
+void ExplorationFSM::optResMsgCallback(
+  const exploration_manager::PairOptResponseConstPtr& msg) {
+  if (msg->from_drone_id == getId() || msg->to_drone_id != getId()) return;
+
+  // Check stamp to avoid unordered/repeated msg
+  if (msg->stamp <= expl_manager_->ed_->pair_opt_res_stamps_[msg->from_drone_id - 1] + 1e-4) return;
+  expl_manager_->ed_->pair_opt_res_stamps_[msg->from_drone_id - 1] = msg->stamp;
+
+  auto ed = expl_manager_->ed_;
+  // Verify the consistency of pair opt via time stamp
+  if (!ed->wait_response_ || fabs(ed->pair_opt_stamp_ - msg->stamp) > 1e-5) return;
+
+  ed->wait_response_ = false;
+  ROS_WARN("get response %d", int(msg->status));
+
+  if (msg->status != 1) return;  // Receive 1 for valid opt
+
+  auto& state1 = ed->swarm_state_[getId() - 1];
+  auto& state2 = ed->swarm_state_[msg->from_drone_id - 1];
+  state1.grid_ids_ = ed->ego_ids_;
+  state2.grid_ids_ = ed->other_ids_;
+  state2.recent_interact_time_ = ros::Time::now().toSec();
+  ed->reallocated_ = true;
+
+  // if (state_ == IDLE && !state1.grid_ids_.empty()) {
+  //   transitState(PLAN_TRAJ, "optResMsgCallback");
+  //   ROS_WARN("Restart after opt!");
+  // }
+}
+
+
+
+
+
 int ExplorationFSM::getId() {
   return expl_manager_->ep_->drone_id_;
 }
 
 
+void ExplorationFSM::findUnallocated(const vector<int>& actives, vector<int>& missed) {
+  // Create map of all active
+  unordered_map<int, char> active_map;
+  for (auto ativ : actives) {
+    active_map[ativ] = 1;
+  }
 
+  // Remove allocated ones
+  for (auto state : expl_manager_->ed_->swarm_state_) {
+    for (auto id : state.grid_ids_) {
+      if (active_map.find(id) != active_map.end()) {
+        active_map.erase(id);
+      } else {
+        // ROS_ERROR("Inactive grid %d is allocated.", id);
+      }
+    }
+  }
+
+  missed.clear();
+  for (auto p : active_map) {
+    missed.push_back(p.first);
+  }
+}
 
 } // namespace fast_planner

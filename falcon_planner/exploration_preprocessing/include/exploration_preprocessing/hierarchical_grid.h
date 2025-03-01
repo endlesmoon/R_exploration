@@ -15,7 +15,7 @@
 #include "exploration_types.h"
 #include "tic_toc.h"
 #include "voxel_mapping/map_server.h"
-
+using namespace std;
 // Grid cell: A single cell in the uniform grid
 // Uniform Grid: A grid (one layer in the hierarchical grid) with uniform size cells
 // Hierarchical Grid: A grid data structure including multiple layers of uniform grids
@@ -195,6 +195,9 @@ public:
   void calculateCostMatrixSingleThread(
       const Position &cur_pos, const Eigen::Vector3d &cur_vel, Eigen::MatrixXd &cost_matrix,
       std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
+  void calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
+    const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
+    std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
   void
   calculateCostMatrixMultiThread(const Position &cur_pos, const Eigen::Vector3d &cur_vel,
                                  const int &thread_num, Eigen::MatrixXd &cost_matrix,
@@ -283,6 +286,11 @@ public:
                               std::vector<std::vector<Position>> &cell_centers_free,
                               std::vector<std::vector<Position>> &cell_centers_unknown);
 
+  int getUnknownCellsNum(int ind){
+    return uniform_grid_[ind].unknown_num_;
+  }
+
+
   friend class HierarchicalGrid;
 
 //private:
@@ -348,7 +356,9 @@ public:
                             const double &cur_yaw, const std::vector<Position> &last_path,
                             Eigen::MatrixXd &cost_matrix,
                             std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
-
+  void calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
+    const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
+    std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
   // Get function to return parameters
   int getNumLevels() { return config_.num_levels_; }
   int getLayerNumCells(const int &level) { return uniform_grids_[level].getNumCells(); }
@@ -415,7 +425,9 @@ public:
       }
     }
   }
-
+  int getUnknownCellsNum(int ind){
+    return uniform_grids_[0].getUnknownCellsNum(ind);
+  }
   // Visualization
   // Visulize one layer grid with its outlines and cell ids at each cell's center
   void publishGridsLayer(const int &level = 0);

@@ -22,8 +22,8 @@
 
 //&&&&&&&&&&&&&&&&&&&&
 #include <exploration_manager/DroneState.h>
-
-
+#include <exploration_manager/PairOpt.h>
+#include <exploration_manager/PairOptResponse.h>
 
 
 
@@ -70,12 +70,17 @@ private:
   ros::Subscriber trigger_sub_, odom_sub_;
   ros::Publisher replan_pub_, bspline_pub_, grid_tour_pub_, uncertainty_pub_;
   ///&&&&&&&&&&&&&&&&&&&&&
-  ros::Publisher drone_state_pub_;
+  ros::Publisher drone_state_pub_,opt_pub_,opt_res_pub_;
+  ros::Subscriber drone_state_sub_,opt_sub_,opt_res_sub_;
   void droneStateTimerCallback(const ros::TimerEvent& e);
+  void droneStateMsgCallback(const exploration_manager::DroneStateConstPtr& msg);
+  void optTimerCallback(const ros::TimerEvent& e); 
+  void optMsgCallback(const exploration_manager::PairOptConstPtr& msg);
+  void optResMsgCallback(const exploration_manager::PairOptResponseConstPtr& msg);
   int getId();
   ros::Timer drone_state_timer_, opt_timer_, swarm_traj_timer_;
-
-
+  void findUnallocated(const vector<int>& actives, vector<int>& missed);
+ 
 
   bool frontier_ready_;
 

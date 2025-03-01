@@ -56,7 +56,9 @@ public:
   shared_ptr<FrontierFinder> frontier_finder_;
   shared_ptr<HierarchicalGrid> hierarchical_grid_;
   shared_ptr<PlanningVisualization> visualization_;
-
+  void allocateGrids(const vector<Eigen::Vector3d>& positions,
+    const vector<Eigen::Vector3d>& velocities, const vector<int>& grid_ids, vector<int>& ego_ids,
+    vector<int>& other_ids);
 private:
   struct TSPConfig {
     int dimension_;
@@ -66,6 +68,11 @@ private:
     bool skip_last_ = false;
     int result_id_offset_ = 1;
   };
+
+//&&&&&&&
+ros::ServiceClient acvrp_client_;
+
+
 
   shared_ptr<EDTEnvironment> edt_environment_;
   voxel_mapping::MapServer::Ptr map_server_;

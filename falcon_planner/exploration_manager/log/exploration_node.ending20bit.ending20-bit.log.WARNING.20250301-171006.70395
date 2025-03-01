@@ -1,0 +1,17 @@
+Log file created at: 2025/03/01 17:10:06
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0301 17:10:06.594692 70395 exploration_fsm.cpp:109] [FSM] Receive odom from topic /uav_simulator/odometry_2
+W0301 17:10:06.594838 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820206.594841269 Transit state from INIT to WAIT_TRIGGER by FSM
+W0301 17:10:07.120198 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.120207557 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0301 17:10:07.153681 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.153684551 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0301 17:10:07.224730 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.224732147 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0301 17:10:07.435204 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.435206419 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0301 17:10:07.460676 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.460679646 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0301 17:10:07.491070 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.491074021 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0301 17:10:07.705952 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.705954793 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0301 17:10:07.729168 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.729171151 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0301 17:10:07.759522 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.759524690 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0301 17:10:07.979182 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820207.979184815 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0301 17:10:08.017381 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820208.017385056 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0301 17:10:08.037757 70395 exploration_fsm.cpp:932] [FSM] ROS Time: 1740820208.037759969 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM

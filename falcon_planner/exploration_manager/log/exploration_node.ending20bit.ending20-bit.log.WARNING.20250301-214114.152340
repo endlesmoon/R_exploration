@@ -1,0 +1,6 @@
+Log file created at: 2025/03/01 21:41:14
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0301 21:41:14.656165 152340 exploration_fsm.cpp:109] [FSM] Receive odom from topic /uav_simulator/odometry_1
+W0301 21:41:14.663616 152340 exploration_fsm.cpp:932] [FSM] ROS Time: 1740836474.663620146 Transit state from INIT to WAIT_TRIGGER by FSM
+W0301 21:41:15.188302 152340 exploration_fsm.cpp:932] [FSM] ROS Time: 1740836475.188312284 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback

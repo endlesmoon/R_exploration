@@ -16,6 +16,9 @@
 #include "raycast/raycast.h"
 #include "sop_solver/sop_solver_interface.h"
 
+
+//&&&&&&&
+#include <lkh_mtsp_solver/SolveMTSP.h>
 using namespace Eigen;
 
 namespace fast_planner {
@@ -73,8 +76,10 @@ void ExplorationManager::initialize(ros::NodeHandle &nh) {
     ed_->pair_opt_stamps_[i] = 0.0;
     ed_->pair_opt_res_stamps_[i] = 0.0;
   }
+  acvrp_client_ = nh.serviceClient<lkh_mtsp_solver::SolveMTSP>(
+    "/solve_acvrp_" + to_string(ep_->drone_id_), true);
 
-
+    nh.param("exploration/mtsp_dir", ep_->mtsp_dir_, string("null"));
 
 
   PathCostEvaluator::astar_.reset(new Astar);
@@ -231,10 +236,12 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     // ROS_INFO("[ExplorationManager] Hgrid tour 2 indices: %s", indices_string.c_str());
 
     int last_index = 0;
-    cout<<"sfasfasfa:  ";
+    //cout<<"sfasfasfa:  ";
     //for(int i=0;i<hierarchical_grid_->uniform_grids.size();i++){
-      cout<<hierarchical_grid_->uniform_grids_[0].uniform_grid_.size()<<endl;
+     // cout<<hierarchical_grid_->uniform_grids_[0].uniform_grid_.size()<<endl;
     //}
+     //&&&&&
+    ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -242,6 +249,11 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     cost_matrix2 不同center的cost
     将路径依次传给grid_tour2
     */
+
+     
+      
+
+      
 
       pair<int, int> cell_id_center_id_pair = cost_mat_id_to_cell_center_id[indices[i]];
       // i is mat id
@@ -255,6 +267,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         ROS_INFO("[ExplorationManager] Hgrid tour 2 next cell id: %d, center id: %d",
                  next_cell_id, next_center_id);
       }
+      //&&&&&
+      ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
+
+
 
       // Get center from cell cell_id
       Position center;
@@ -1762,4 +1778,177 @@ void ExplorationManager::saveCostMatrix(
     ROS_ERROR("[ExplorationManager] Unable to open file: %s", filename.c_str());
   }
 }
+
+
+//&&&&&
+void ExplorationManager::allocateGrids(const vector<Eigen::Vector3d>& positions,
+  const vector<Eigen::Vector3d>& velocities, const vector<int>& grid_ids, vector<int>& ego_ids,
+  vector<int>& other_ids) {
+// ROS_INFO("Allocate grid.");
+auto t1 = ros::Time::now();
+auto t2 = t1;
+
+
+Eigen::MatrixXd mat;
+std::map<int, std::pair<int, int>> cost_mat_id_to_cell_center_id;
+// uniform_grid_->getCostMatrix(positions, velocities, prev_first_ids, grid_ids, mat);
+hierarchical_grid_->calculateCostMatrix2fromcells(positions,
+   velocities, grid_ids, mat,cost_mat_id_to_cell_center_id);
+// int unknown = hgrid_->getTotalUnknwon();
+int unknown;
+
+double mat_time = (ros::Time::now() - t1).toSec();
+
+// Find optimal path through AmTSP
+t1 = ros::Time::now();
+const int dimension = mat.rows();
+const int drone_num = positions.size();
+
+vector<int> unknown_nums;
+int capacity = 0;
+for (int i = 0; i < grid_ids.size(); ++i) {
+  int unum = hierarchical_grid_->getUnknownCellsNum(grid_ids[i]);
+  unknown_nums.push_back(unum);
+  capacity += unum;
+  // std::cout << "Grid " << i << ": " << unum << std::endl;
+}
+// std::cout << "Total: " << capacity << std::endl;
+capacity = capacity * 0.75 * 0.1;
+cout<<mat.rows()<<"sdasdsa"<<endl;
+// int prob_type;
+// if (grid_ids.size() >= 3)
+//   prob_type = 2;  // Use ACVRP
+// else
+//   prob_type = 1;  // Use AmTSP
+
+const int prob_type = 2;
+
+// Create problem file--------------------------
+ofstream file(ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".atsp");
+file << "NAME : pairopt\n";
+
+if (prob_type == 1)
+  file << "TYPE : ATSP\n";
+else if (prob_type == 2)
+  file << "TYPE : ACVRP\n";
+
+file << "DIMENSION : " + to_string(dimension) + "\n";
+file << "EDGE_WEIGHT_TYPE : EXPLICIT\n";
+file << "EDGE_WEIGHT_FORMAT : FULL_MATRIX\n";
+
+if (prob_type == 2) {
+  file << "CAPACITY : " + to_string(capacity) + "\n";   // ACVRP
+  file << "VEHICLES : " + to_string(drone_num) + "\n";  // ACVRP
+}
+
+// Cost matrix
+file << "EDGE_WEIGHT_SECTION\n";
+for (int i = 0; i < dimension; ++i) {
+  for (int j = 0; j < dimension; ++j) {
+    int int_cost = 100 * mat(i, j);
+    file << int_cost << " ";
+  }
+  file << "\n";
+}
+
+if (prob_type == 2) {  // Demand section, ACVRP only
+  file << "DEMAND_SECTION\n";
+  for (int i = 0; i < drone_num; ++i) {
+    file << to_string(i + 1) + " 0\n";
+  }
+  // for (int i = 0; i < grid_ids.size(); ++i) {
+  //   int grid_unknown = unknown_nums[i] * 0.1;
+  //   file << to_string(i + 2 + drone_num) + " " + to_string(grid_unknown) + "\n";
+  // }
+  for (int i = 0; i < dimension-drone_num; ++i) {
+    //if(i<20) cout<<"sdsadasda"<<unknown_nums[i]<<endl;
+    int grid_unknown = 5000;
+    file << to_string(i + 1 + drone_num) + " " + to_string(grid_unknown) + "\n";
+  }
+  file << "DEPOT_SECTION\n";
+  file << "1\n";
+  file << "EOF";
+}
+
+file.close();
+
+// Create par file------------------------------------------
+int min_size = int(grid_ids.size()) / 2;
+int max_size = ceil(int(grid_ids.size()) / 2.0);
+file.open(ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".par");
+file << "SPECIAL\n";
+file << "PROBLEM_FILE = " + ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".atsp\n";
+if (prob_type == 1) {
+  file << "SALESMEN = " << to_string(drone_num) << "\n";
+  file << "MTSP_OBJECTIVE = MINSUM\n";
+  // file << "MTSP_OBJECTIVE = MINMAX\n";
+  file << "MTSP_MIN_SIZE = " << to_string(min_size) << "\n";
+  file << "MTSP_MAX_SIZE = " << to_string(max_size) << "\n";
+  file << "TRACE_LEVEL = 0\n";
+} else if (prob_type == 2) {
+  file << "TRACE_LEVEL = 1\n";  // ACVRP
+  file << "SEED = 0\n";         // ACVRP
+}
+file << "RUNS = 1\n";
+file << "TOUR_FILE = " + ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".tour\n";
+
+file.close();
+
+auto par_dir = ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".atsp";
+t1 = ros::Time::now();
+
+lkh_mtsp_solver::SolveMTSP srv;
+srv.request.prob = 3;
+// if (!tsp_client_.call(srv)) {
+if (!acvrp_client_.call(srv)) {
+  ROS_ERROR("Fail to solve ACVRP.");
+  return;
+}
+// system("/home/boboyu/software/LKH-3.0.6/LKH
+// /home/boboyu/workspaces/hkust_swarm_ws/src/swarm_exploration/utils/lkh_mtsp_solver/resource/amtsp3_1.par");
+
+double mtsp_time = (ros::Time::now() - t1).toSec();
+std::cout << "Allocation time: " << mtsp_time << std::endl;
+
+// Read results
+t1 = ros::Time::now();
+
+ifstream fin(ep_->mtsp_dir_ + "/amtsp3_" + to_string(ep_->drone_id_) + ".tour");
+string res;
+vector<int> ids;
+while (getline(fin, res)) {
+  if (res.compare("TOUR_SECTION") == 0) break;
+}
+while (getline(fin, res)) {
+  int id = stoi(res);
+  ids.push_back(id - 1);
+  if (id == -1) break;
+}
+fin.close();
+
+// Parse the m-tour of grid
+vector<vector<int>> tours;
+vector<int> tour;
+for (auto id : ids) {
+  if (id > 0 && id <= drone_num) {
+    tour.clear();
+    tour.push_back(id);
+  } else if (id >= dimension || id <= 0) {
+    tours.push_back(tour);
+  } else {
+    tour.push_back(cost_mat_id_to_cell_center_id[id].first);
+  }
+}
+
+for (int i = 1; i < tours.size(); ++i) {
+  if (tours[i][0] == 1) {
+    ego_ids.insert(ego_ids.end(), tours[i].begin() + 1, tours[i].end());
+  } else {
+    other_ids.insert(other_ids.end(), tours[i].begin() + 1, tours[i].end());
+  }
+}
+}
+
+
+
 } // namespace fast_planner

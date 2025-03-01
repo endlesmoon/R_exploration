@@ -22,11 +22,15 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory
   exploration_utils
   message_generation
+  #
+  lkh_mtsp_solver
 )
 
 add_message_files(
   FILES
   DroneState.msg
+  PairOpt.msg
+  PairOptResponse.msg
 )
 
 generate_messages(
