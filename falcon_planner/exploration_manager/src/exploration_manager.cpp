@@ -116,6 +116,18 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   const ros::Time plan_start_time = t1;
 
   clearExplorationData();
+  //  auto f=hierarchical_grid_->uniform_grids_[0].uniform_grid_;
+  // //  cout<<"sfasflkasjflkas:";
+  // //  for(int i=0;i<f.size();i++) {cout<<i<<" ";
+  // //   switch (f[i].state_) {
+  // //     case GridCell::STATE::ACTIVE:   cout<< "ACTIVE";break;
+  // //     case GridCell::STATE::EXPLORED: cout<< "EXPLORED";break;
+  // //     case GridCell::STATE::UNKNWON:  cout<< "UNKNOWN"; break; // 注意枚举名可能拼写错误（应为 UNKNOWN）
+  // //     default:              cout<< "INVALID";
+  // // }
+  // //   cout<<endl;
+  
+  }
 
   // Do global and local tour planning and retrieve the next viewpoint
   Vector3d next_pos;
@@ -171,13 +183,25 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   cost_mat_id_to_cell_center_id.clear();
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
-  hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
+  vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
+  //cout<<grid.size()<<"sfasfasfa"<<endl;
+  //&&&&&&&&&&&
+  if(grid.empty()){
+    hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
                                            cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
+  }else{
+    //cout<<"sfafsagagaslg  ";
+   // for(auto g:grid) cout<<g<<" ";
+   // cout<<endl;
+    hierarchical_grid_->calculateCostMatrix2fromcells({pos}
+      ,{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
+  }
+  
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
-    cout<<endl<<"sfasfsafaf1: ";
-    for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
-    cout<<endl<<"sfasfsafaf2: ";
-    for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
+    // cout<<endl<<"sfasfsafaf1: ";
+    // for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
+    // cout<<endl<<"sfasfsafaf2: ";
+    // for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
 
   double hgrid_cost_matrix2_time = (ros::Time::now() - t1).toSec();
   double hgrid_tsp2_time = 0.0;
@@ -230,6 +254,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
+    unordered_set<int> settt;
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -255,8 +280,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
                  next_cell_id, next_center_id);
       }
       //&&&&&
+      if(settt.find(cell_id)==settt.end()){
       ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
-
+        settt.insert(cell_id);
+    }
 
 
       // Get center from cell cell_id
@@ -268,7 +295,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
       last_index = indices[i];
-    }
+    } settt.clear();
     tsp_indices = indices;
 
     double grid_tour2_cost_sum = 0.0;
@@ -301,7 +328,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       last_grid_tour2_cost_size = grid_tour2_cost.size();
     }
   }
-
+ 
   // print sizes
   ROS_INFO("[ExplorationManager] Hgrid tour 2 cost matrix size: %d, indices size: %d, grid "
            "tour 2 size: %d",
@@ -1731,7 +1758,7 @@ auto t2 = t1;
 Eigen::MatrixXd mat;
 std::map<int, std::pair<int, int>> cost_mat_id_to_cell_center_id;
 // uniform_grid_->getCostMatrix(positions, velocities, prev_first_ids, grid_ids, mat);
-hierarchical_grid_->calculateCostMatrix2fromcells(positions,
+hierarchical_grid_->calculateCostMatrix2forACVRP(positions,
    velocities, grid_ids, mat,cost_mat_id_to_cell_center_id);
 // int unknown = hgrid_->getTotalUnknwon();
 int unknown;
@@ -1798,7 +1825,7 @@ if (prob_type == 2) {  // Demand section, ACVRP only
   //   file << to_string(i + 2 + drone_num) + " " + to_string(grid_unknown) + "\n";
   // }
   for (int i = 0; i < dimension-drone_num; ++i) {
-    int grid_unknown = 5000;
+    int grid_unknown = unknown_nums[i]*0.1;
     file << to_string(i + 1 + drone_num) + " " + to_string(grid_unknown) + "\n";
   }
   file << "DEPOT_SECTION\n";
@@ -1855,29 +1882,31 @@ vector<int> ids;
 while (getline(fin, res)) {
   if (res.compare("TOUR_SECTION") == 0) break;
 }
+//cout<<"sfjhasklfjhlsakfasfas:";
 while (getline(fin, res)) {
   int id = stoi(res);
   ids.push_back(id - 1);
   if (id == -1) break;
-}
+  //cout<<id<<"  ";
+}//cout<<endl;
 fin.close();
 
 // Parse the m-tour of grid
 vector<vector<int>> tours;
 vector<int> tour;
 for (auto id : ids) {
-  if (id > 0 && id <= drone_num) {
+  if (id >= 0 && id <drone_num) {
     tour.clear();
     tour.push_back(id);
   } else if (id >= dimension || id <= 0) {
     tours.push_back(tour);
   } else {
-    tour.push_back(cost_mat_id_to_cell_center_id[id].first);
+    tour.push_back(grid_ids[id-2]);
   }
 }
 
 for (int i = 1; i < tours.size(); ++i) {
-  if (tours[i][0] == 1) {
+  if (tours[i][0] == 0) {
     ego_ids.insert(ego_ids.end(), tours[i].begin() + 1, tours[i].end());
   } else {
     other_ids.insert(other_ids.end(), tours[i].begin() + 1, tours[i].end());

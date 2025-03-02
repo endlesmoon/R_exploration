@@ -1,0 +1,31 @@
+Log file created at: 2025/03/02 14:05:06
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0302 14:05:06.717317 32076 exploration_fsm.cpp:114] [FSM] Receive odom from topic /uav_simulator/odometry_1
+W0302 14:05:06.717427 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895506.717429840 Transit state from INIT to WAIT_TRIGGER by FSM
+W0302 14:05:07.238374 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.238384680 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0302 14:05:07.273754 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.273762016 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:07.341181 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.341185037 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:07.558225 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.558228260 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:07.566860 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.566865456 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:07.611435 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.611437530 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:07.832859 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.832862026 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:07.841310 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.841313046 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:07.893132 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895507.893134146 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:08.129171 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.129174104 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:08.140293 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.140297176 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:08.179432 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.179435242 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:08.415145 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.415148240 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:08.477133 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.477137309 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:08.517478 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.517481039 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:08.744689 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.744692108 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:08.752959 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.752962568 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:08.805092 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895508.805096029 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:09.031081 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.031084093 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:09.040181 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.040185319 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:09.091353 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.091356143 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:09.312042 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.312046079 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 14:05:09.318815 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.318824643 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 14:05:09.362425 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.362428569 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 14:05:09.590109 32076 exploration_fsm.cpp:937] [FSM] ROS Time: 1740895509.590112107 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+F0302 14:05:09.593529 32076 hierarchical_grid.cpp:3398] Check failed: cost > 1e-6 (0 vs. 1e-06) Zero cost from cell 15 center 0 pos (2.05, -3.35, 1.05) to cell 15 center 0 pos (2.05, -3.35, 1.05)

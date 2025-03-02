@@ -198,6 +198,9 @@ public:
   void calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
     const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
     std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
+  void calculateCostMatrix2forACVRP(const vector<Position> &cur_pos,
+    const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
+    std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
   void
   calculateCostMatrixMultiThread(const Position &cur_pos, const Eigen::Vector3d &cur_vel,
                                  const int &thread_num, Eigen::MatrixXd &cost_matrix,
@@ -359,6 +362,13 @@ public:
   void calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
     const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
     std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id);
+
+    void calculateCostMatrix2forACVRP(const vector<Position> &cur_pos,
+      const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
+      std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id){
+        uniform_grids_[0].calculateCostMatrix2forACVRP(cur_pos,cur_vel,
+          grid_id,cost_matrix,cost_mat_id_to_cell_center_id);
+      }
   // Get function to return parameters
   int getNumLevels() { return config_.num_levels_; }
   int getLayerNumCells(const int &level) { return uniform_grids_[level].getNumCells(); }

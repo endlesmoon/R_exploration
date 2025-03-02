@@ -1,0 +1,13 @@
+Log file created at: 2025/03/02 13:21:46
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0302 13:21:46.001451 20832 exploration_fsm.cpp:114] [FSM] Receive odom from topic /uav_simulator/odometry_2
+W0302 13:21:46.001672 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.001675120 Transit state from INIT to WAIT_TRIGGER by FSM
+W0302 13:21:46.542984 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.542991749 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0302 13:21:46.574445 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.574448924 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 13:21:46.644716 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.644717704 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 13:21:46.859477 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.859479963 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0302 13:21:46.888326 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.888330347 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0302 13:21:46.918705 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892906.918707897 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0302 13:21:47.134552 20832 exploration_fsm.cpp:937] [FSM] ROS Time: 1740892907.134553734 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+F0302 13:21:47.138832 20832 hierarchical_grid.cpp:3398] Check failed: cost > 1e-6 (0 vs. 1e-06) Zero cost from cell 15 center 0 pos (2.45, -0.55, 1.05) to cell 15 center 0 pos (2.45, -0.55, 1.05)

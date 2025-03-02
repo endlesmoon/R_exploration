@@ -3195,16 +3195,18 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
       // Only free subspaces and unknown subspaces are considered in CP
       dim += grid_cell.centers_free_active_.size();
       dim += grid_cell.centers_unknown_active_.size();
-
+      //cout<<endl<<"sdadsa "<<ind;
       int cell_id = grid_cell.id_;
 
       // Cell center index: starting from free centers, then unknown centers
       for (int i = 0; i < (int)grid_cell.centers_free_active_.size(); i++) {
+       // cout<<" "<<i;
         cost_mat_id_to_cell_center_id[mat_idx] = std::make_pair(cell_id, i);
         mat_idx++;
       }
 
       for (int i = 0; i < (int)grid_cell.centers_unknown_active_.size(); i++) {
+        //cout<<" "<<grid_cell.centers_free_active_.size()+i;
         cost_mat_id_to_cell_center_id[mat_idx] =
             std::make_pair(cell_id, i + grid_cell.centers_free_active_.size());
         mat_idx++;
@@ -3239,6 +3241,7 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
         
       }    
   }
+ // cout<<"start"<<endl;
   int mat_idx1 = cur_pos.size();
   for (auto ind1:grid_id) {
     auto grid_cell1=uniform_grid_[ind1];
@@ -3271,7 +3274,7 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
             mat_idx2++;
             continue;
           }
-
+          //cout<<ind1<<" "<<mat_idx1<<" "<<i<<" "<<ind2<<" "<<mat_idx2<<" "<<j<<endl;
           double cost = 0.0;
           int cell_center_id1 = -1, cell_center_id2 = -1;
           bool no_cg_search = false;
@@ -3406,10 +3409,38 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
 
 
 }
+
+
 void HierarchicalGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
     const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
     std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id){
       uniform_grids_[0].calculateCostMatrix2fromcells(cur_pos,cur_vel,
         grid_id,cost_matrix,cost_mat_id_to_cell_center_id);
     }
+void UniformGrid::calculateCostMatrix2forACVRP(const vector<Position> &cur_pos,
+  const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
+  std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id){
+    if(cur_pos.size()!=cur_vel.size()) return;
+    int dim=cur_pos.size()+grid_id.size();
+    cost_matrix = Eigen::MatrixXd::Zero(dim, dim);
+    for(int k=0;k<cur_pos.size();k++){
+      for (int i=0;i<grid_id.size();i++) {
+        auto grid_cell=uniform_grid_[grid_id[i]];
+        double cost=getAStarCostYaw(cur_pos[k],grid_cell.center_,cur_vel[k], 0.0, 0.0);
+        cost_matrix(k, cur_pos.size()+i) = cost;
+      }    
+    }
+    for(int i=0;i<grid_id.size();i++){
+      for(int j=i+1;j<grid_id.size();j++){
+        auto grid_cell1=uniform_grid_[grid_id[i]];
+        auto grid_cell2=uniform_grid_[grid_id[j]];
+        double cost=getAStarCostYaw(grid_cell1.center_,
+          grid_cell2.center_, Eigen::Vector3d::Zero(), 0.0, 0.0);
+        if(cost>499.0){
+          cost = 1000.0 + (grid_cell1.center_- grid_cell2.center_).norm();
+        }
+        cost_matrix(i+cur_pos.size(), j+cur_pos.size()) = cost_matrix(j+cur_pos.size(), i+cur_pos.size()) = cost;
+      }
+    }
+}
 } // namespace fast_planner

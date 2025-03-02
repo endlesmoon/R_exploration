@@ -1050,9 +1050,13 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
 
                   
   auto t1 = ros::Time::now();
-
+  // cout<<"shfkahjfksallzx:";
+  // for(auto xx:opt_ids) cout<<xx<<" ";cout<<endl;
   vector<int> ego_ids, other_ids;
   expl_manager_->allocateGrids(positions, velocities, opt_ids, ego_ids, other_ids);
+  // cout<<"wssb:";
+  // for(auto e:ego_ids) cout<<e<<" ";
+  // cout<<endl;
   double alloc_time = (ros::Time::now() - t1).toSec();
 
   // // Check results
@@ -1092,9 +1096,9 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   opt.from_drone_id = getId();
   opt.to_drone_id = select_id;
   // opt.msg_type = 1;
-  opt.stamp = tn;
-  for (auto id : ego_ids) opt.ego_ids.push_back(id);
-  for (auto id : other_ids) opt.other_ids.push_back(id);
+  opt.stamp = tn;//cout<<"sfasfafafas1:";
+  for (auto id : ego_ids) {opt.ego_ids.push_back(id);}//cout<<endl<<"sfasfafafas12:";
+  for (auto id : other_ids) {opt.other_ids.push_back(id);}//cout<<endl;
 
   for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_pub_.publish(opt);
 
@@ -1137,9 +1141,9 @@ void ExplorationFSM::optMsgCallback(const exploration_manager::PairOptConstPtr& 
 
     // Update from the opt result
     state1.grid_ids_.clear();
-    state2.grid_ids_.clear();
-    for (auto id : msg->ego_ids) state1.grid_ids_.push_back(id);
-    for (auto id : msg->other_ids) state2.grid_ids_.push_back(id);
+    state2.grid_ids_.clear();//cout<<"sdalfasfa1: ";
+    for (auto id : msg->ego_ids) {state1.grid_ids_.push_back(id);}//cout<<endl;cout<<"sdalfasfa12: ";
+    for (auto id : msg->other_ids) {;state2.grid_ids_.push_back(id);}//cout<<endl;
 
     state1.recent_interact_time_ = msg->stamp;
     state2.recent_attempt_time_ = ros::Time::now().toSec();

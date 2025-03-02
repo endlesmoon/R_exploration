@@ -12,12 +12,12 @@
 #include "exploration_preprocessing/hierarchical_grid.h"
 #include "traj_utils/planning_visualization.h"
 #include "voxel_mapping/map_server.h"
-
+#include <unordered_set>
 using Eigen::Vector3d;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
-
+using std::unordered_set;
 namespace fast_planner {
 class EDTEnvironment;
 class FastPlannerManager;
