@@ -127,7 +127,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // // }
   // //   cout<<endl;
   
-  }
+  
 
   // Do global and local tour planning and retrieve the next viewpoint
   Vector3d next_pos;
@@ -254,7 +254,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
-    unordered_set<int> settt;
+    unordered_set<int> settt;cout<<"sfasfafagh:"<<grid.size()<<endl;
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -276,8 +276,8 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         next_cell_id = cell_id;
         next_cell_id_grid_tour2 = cell_id;
         next_center_id = center_id;
-        ROS_INFO("[ExplorationManager] Hgrid tour 2 next cell id: %d, center id: %d",
-                 next_cell_id, next_center_id);
+      // ROS_INFO("[ExplorationManager] Hgrid tour 2 next cell id: %d, center id: %d",
+      //            next_cell_id, next_center_id);  
       }
       //&&&&&
       if(settt.find(cell_id)==settt.end()){
@@ -285,7 +285,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         settt.insert(cell_id);
     }
 
-
+      cout<<cell_id<<" ";
       // Get center from cell cell_id
       Position center;
       hierarchical_grid_->getLayerCellCenters(0, cell_id, center_id, center);
@@ -295,7 +295,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
       last_index = indices[i];
-    } settt.clear();
+    } settt.clear();cout<<endl;
     tsp_indices = indices;
 
     double grid_tour2_cost_sum = 0.0;
@@ -1753,8 +1753,8 @@ void ExplorationManager::allocateGrids(const vector<Eigen::Vector3d>& positions,
 // ROS_INFO("Allocate grid.");
 auto t1 = ros::Time::now();
 auto t2 = t1;
-
-
+cout<<"sgjhalkgjsagfa:";
+for(auto g:grid_ids ) cout<<"  "<<g;cout<<endl;
 Eigen::MatrixXd mat;
 std::map<int, std::pair<int, int>> cost_mat_id_to_cell_center_id;
 // uniform_grid_->getCostMatrix(positions, velocities, prev_first_ids, grid_ids, mat);
@@ -1817,16 +1817,13 @@ for (int i = 0; i < dimension; ++i) {
 
 if (prob_type == 2) {  // Demand section, ACVRP only
   file << "DEMAND_SECTION\n";
+  file << "1 0\n";
   for (int i = 0; i < drone_num; ++i) {
-    file << to_string(i + 1) + " 0\n";
+    file << to_string(i + 2) + " 0\n";
   }
-  // for (int i = 0; i < grid_ids.size(); ++i) {
-  //   int grid_unknown = unknown_nums[i] * 0.1;
-  //   file << to_string(i + 2 + drone_num) + " " + to_string(grid_unknown) + "\n";
-  // }
-  for (int i = 0; i < dimension-drone_num; ++i) {
-    int grid_unknown = unknown_nums[i]*0.1;
-    file << to_string(i + 1 + drone_num) + " " + to_string(grid_unknown) + "\n";
+  for (int i = 0; i < grid_ids.size(); ++i) {
+    int grid_unknown = unknown_nums[i] * 0.1;
+    file << to_string(i + 2 + drone_num) + " " + to_string(grid_unknown) + "\n";
   }
   file << "DEPOT_SECTION\n";
   file << "1\n";
@@ -1895,22 +1892,34 @@ fin.close();
 vector<vector<int>> tours;
 vector<int> tour;
 for (auto id : ids) {
-  if (id >= 0 && id <drone_num) {
+  if (id > 0 && id <= drone_num) {
     tour.clear();
     tour.push_back(id);
   } else if (id >= dimension || id <= 0) {
     tours.push_back(tour);
   } else {
-    tour.push_back(grid_ids[id-2]);
+    tour.push_back(id);
   }
 }
+// // Print tour ids
+// for (auto tr : tours) {
+//   std::cout << "tour: ";
+//   for (auto id : tr) std::cout << id << ", ";
+//   std::cout << "" << std::endl;
+// }
 
 for (int i = 1; i < tours.size(); ++i) {
-  if (tours[i][0] == 0) {
+  if (tours[i][0] == 1) {
     ego_ids.insert(ego_ids.end(), tours[i].begin() + 1, tours[i].end());
   } else {
     other_ids.insert(other_ids.end(), tours[i].begin() + 1, tours[i].end());
   }
+}
+for (auto& id : ego_ids) {
+  id = grid_ids[id - 1 - drone_num];
+}
+for (auto& id : other_ids) {
+  id = grid_ids[id - 1 - drone_num];
 }
 }
 

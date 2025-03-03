@@ -3421,13 +3421,32 @@ void UniformGrid::calculateCostMatrix2forACVRP(const vector<Position> &cur_pos,
   const vector<Eigen::Vector3d> &cur_vel,const vector<int> &grid_id,Eigen::MatrixXd &cost_matrix,
   std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id){
     if(cur_pos.size()!=cur_vel.size()) return;
-    int dim=cur_pos.size()+grid_id.size();
-    cost_matrix = Eigen::MatrixXd::Zero(dim, dim);
+    const int drone_num = cur_pos.size();
+    const int grid_num = grid_id.size();
+    const int dimen = 1 + drone_num + grid_num;
+    cost_matrix = Eigen::MatrixXd::Zero(dimen, dimen);
+      // Virtual depot to drones
+    for (int i = 0; i < drone_num; ++i) {
+      cost_matrix(0, 1 + i) = -1000;
+      cost_matrix(1 + i, 0) = 1000;
+    }
+    // Virtual depot to grid
+    for (int i = 0; i < grid_num; ++i) {
+      cost_matrix(0, 1 + drone_num + i) = 1000;
+      cost_matrix(1 + drone_num + i, 0) = 0;
+    }
+    // Costs between drones
+    for (int i = 0; i < drone_num; ++i) {
+      for (int j = 0; j < drone_num; ++j) {
+        cost_matrix(1 + i, 1 + j) = 10000;
+      }
+    }
     for(int k=0;k<cur_pos.size();k++){
       for (int i=0;i<grid_id.size();i++) {
         auto grid_cell=uniform_grid_[grid_id[i]];
         double cost=getAStarCostYaw(cur_pos[k],grid_cell.center_,cur_vel[k], 0.0, 0.0);
-        cost_matrix(k, cur_pos.size()+i) = cost;
+        cost_matrix(k+1, drone_num+i+1) = cost;
+        cost_matrix(drone_num+i+1,1+k)=cost;
       }    
     }
     for(int i=0;i<grid_id.size();i++){
@@ -3439,8 +3458,14 @@ void UniformGrid::calculateCostMatrix2forACVRP(const vector<Position> &cur_pos,
         if(cost>499.0){
           cost = 1000.0 + (grid_cell1.center_- grid_cell2.center_).norm();
         }
-        cost_matrix(i+cur_pos.size(), j+cur_pos.size()) = cost_matrix(j+cur_pos.size(), i+cur_pos.size()) = cost;
+        cost_matrix(i+cur_pos.size()+1, 1+j+cur_pos.size())
+        = cost_matrix(1+j+cur_pos.size(),1+ i+cur_pos.size()) = cost;
       }
     }
+
+  // Diag
+  for (int i = 0; i < dimen; ++i) {
+    cost_matrix(i, i) = 1000;
+  }
 }
 } // namespace fast_planner
