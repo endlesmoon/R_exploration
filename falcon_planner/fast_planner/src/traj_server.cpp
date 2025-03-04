@@ -463,7 +463,6 @@ int main(int argc, char **argv) {
   nh.param("/traj_server/kv_z", cmd.kv[2], -1.0);
 
   nh.param("exploration_manager/drone_id", drone_id, 1);
-  std::cout<<drone_id<<"sdsadas"<<std::endl;
   ROS_INFO("[TrajServer] Initializing");
   ros::Duration(2.0).sleep();
 

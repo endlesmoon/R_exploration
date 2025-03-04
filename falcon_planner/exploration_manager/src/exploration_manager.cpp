@@ -218,13 +218,11 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
     vector<int> indices;
     double cost;
-    cout<<"sfdasfasfa1"<<endl;
     solveTSP(cost_matrix2, hgrid_tsp_config, indices, cost);//tsp算法解决路径选择问题
 
     
 
 
-    cout<<"sfdasfasfa2"<<endl;
     hgrid_tsp2_time = (ros::Time::now() - t1).toSec();
 
     ed_->grid_tour2_.clear();
@@ -280,10 +278,8 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       hierarchical_grid_->getLayerCellCenters(0, cell_id, center_id, center);
       ed_->grid_tour2_.push_back(center);
       ed_->grid_tour2_cell_centers_id_.push_back(make_pair(cell_id, center_id));
-      cout<<"sfdasfasfa3"<<endl;
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
-      cout<<"sfdasfasfa4"<<endl;
       last_index = indices[i];
     } settt.clear();
     tsp_indices = indices;
@@ -1752,8 +1748,6 @@ void ExplorationManager::allocateGrids(const vector<Eigen::Vector3d>& positions,
 // ROS_INFO("Allocate grid.");
 auto t1 = ros::Time::now();
 auto t2 = t1;
-cout<<"sgjhalkgjsagfa:";
-for(auto g:grid_ids ) cout<<"  "<<g;cout<<endl;
 Eigen::MatrixXd mat;
 std::map<int, std::pair<int, int>> cost_mat_id_to_cell_center_id;
 // uniform_grid_->getCostMatrix(positions, velocities, prev_first_ids, grid_ids, mat);
