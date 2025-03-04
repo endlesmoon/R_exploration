@@ -131,7 +131,8 @@ void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
     std_msgs::Int32 replan_msg;
     replan_msg.data = 2;
     replan_pub_.publish(replan_msg);
-
+    auto tm=ros::Time::now();
+    while (ros::Time::now() - tm < ros::Duration(10.0)){}
     static bool clear_vis = false;
     if (!clear_vis) {
       auto ed_ = expl_manager_->ed_;

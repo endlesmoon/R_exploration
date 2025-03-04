@@ -1653,91 +1653,6 @@ void ExplorationManager::solveTSP(const Eigen::MatrixXd &cost_matrix, const TSPC
     result_indices.push_back(id - config.result_id_offset_);
   }
   fin.close();
-
-
-
-
-
-
-
-
-
-
-
-  // CHECK_EQ(cost_matrix.rows(), cost_matrix.cols()) << "TSP cost matrix must be square";
-
-  // ros::Time t1 = ros::Time::now();
-  // // Write params and cost matrix to problem file
-  // ofstream prob_file(ep_->tsp_dir_ + "/" + config.problem_name_ + ".tsp");
-
-  // // Problem specification part, follow the format of TSPLIB
-  // string prob_spec = "NAME : " + config.problem_name_ +
-  //                    "\nTYPE : ATSP\nDIMENSION : " + to_string(config.dimension_) +
-  //                    "\nEDGE_WEIGHT_TYPE : "
-  //                    "EXPLICIT\nEDGE_WEIGHT_FORMAT : FULL_MATRIX\nEDGE_WEIGHT_SECTION\n";
-  // prob_file << prob_spec;
-
-  // // Use Asymmetric TSP
-  // const int scale = 100;
-  // for (int i = 0; i < config.dimension_; ++i) {
-  //   for (int j = 0; j < config.dimension_; ++j) {
-  //     int int_cost = cost_matrix(i, j) * scale;
-  //     prob_file << int_cost << " ";
-  //   }
-  //   prob_file << "\n";
-  // }
-
-  // prob_file << "EOF";
-  // prob_file.close();
-
-  // // ROS_INFO("[ExplorationManager] TSP problem file time: %.2f ms",
-  // //          (ros::Time::now() - t1).toSec() * 1000);
-  // t1 = ros::Time::now();
-
-  // // Call LKH TSP solver
-  // solveTSPLKH((ep_->tsp_dir_ + "/" + config.problem_name_ + ".par").c_str());
-
-  // // ROS_INFO("[ExplorationManager] TSP solver time: %.2f ms",
-  // //          (ros::Time::now() - t1).toSec() * 1000);
-
-  // // Read result indices from the tour section of result file
-  // ifstream fin(ep_->tsp_dir_ + "/" + config.problem_name_ + ".txt");
-  // string res;
-  // // Go to tour section
-  // while (getline(fin, res)) {
-  //   // Read total cost
-  //   if (res.find("COMMENT : Length") != std::string::npos) {
-  //     int cost_res = stoi(res.substr(19));
-  //     total_cost = (double)cost_res / 100.0;
-  //     // ROS_INFO("[ExplorationManager] TSP problem name: %s, total cost: %.2f",
-  //     //          config.problem_name_.c_str(), cost);
-  //     LOG(INFO) << "[ExplorationManager] TSP problem name: " << config.problem_name_
-  //               << ", total cost: " << total_cost;
-  //   }
-  //   if (res.compare("TOUR_SECTION") == 0)
-  //     break;
-  // }
-  // // Read indices
-  // while (getline(fin, res)) {
-  //   int id = stoi(res);
-
-  //   // Ignore the first state (current state)
-  //   if (id == 1 && config.skip_first_) {
-  //     continue;
-  //   }
-
-  //   // Ignore the last state (next grid or virtual depot)
-  //   if (id == config.dimension_ && config.skip_last_) {
-  //     break;
-  //   }
-
-  //   // EOF
-  //   if (id == -1)
-  //     break;
-
-  //   result_indices.push_back(id - config.result_id_offset_);
-  // }
-  // fin.close();
 }
 
 void ExplorationManager::initializeHierarchicalGrid(const Vector3d &pos,
@@ -1948,8 +1863,6 @@ if (!acvrp_client_.call(srv)) {
   ROS_ERROR("Fail to solve ACVRP.");
   return;
 }
-// system("/home/boboyu/software/LKH-3.0.6/LKH
-// /home/boboyu/workspaces/hkust_swarm_ws/src/swarm_exploration/utils/lkh_mtsp_solver/resource/amtsp3_1.par");
 
 double mtsp_time = (ros::Time::now() - t1).toSec();
 std::cout << "Allocation time: " << mtsp_time << std::endl;
@@ -1985,12 +1898,6 @@ for (auto id : ids) {
     tour.push_back(id);
   }
 }
-// // Print tour ids
-// for (auto tr : tours) {
-//   std::cout << "tour: ";
-//   for (auto id : tr) std::cout << id << ", ";
-//   std::cout << "" << std::endl;
-// }
 
 for (int i = 1; i < tours.size(); ++i) {
   if (tours[i][0] == 1) {
