@@ -1179,12 +1179,10 @@ void ExplorationFSM::optResMsgCallback(
   ROS_WARN("get response %d", int(msg->status));
 
   if (msg->status != 1) return;  // Receive 1 for valid opt
-  cout<<"asgsagasfafasf";
   auto& state1 = ed->swarm_state_[getId() - 1];
   auto& state2 = ed->swarm_state_[msg->from_drone_id - 1];
   state1.grid_ids_ = ed->ego_ids_;
   state2.grid_ids_ = ed->other_ids_;
-  cout<<"sfasdaffsa"<<ed->ego_ids_.size()<<"  "<<ed->other_ids_.size()<<endl;
   state2.recent_interact_time_ = ros::Time::now().toSec();
   ed->reallocated_ = true;
 

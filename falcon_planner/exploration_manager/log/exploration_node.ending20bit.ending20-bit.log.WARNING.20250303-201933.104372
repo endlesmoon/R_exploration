@@ -1,0 +1,14 @@
+Log file created at: 2025/03/03 20:19:33
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0303 20:19:33.452620 104372 exploration_fsm.cpp:114] [FSM] Receive odom from topic /uav_simulator/odometry_1
+W0303 20:19:33.452791 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004373.452794769 Transit state from INIT to WAIT_TRIGGER by FSM
+W0303 20:19:33.988327 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004373.988332485 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0303 20:19:34.017246 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.017250459 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0303 20:19:34.094482 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.094485517 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0303 20:19:34.314256 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.314260160 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0303 20:19:34.327731 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.327736081 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0303 20:19:34.374611 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.374614766 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0303 20:19:34.612188 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.612191016 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0303 20:19:34.625525 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.625529334 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0303 20:19:34.672523 104372 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004374.672527511 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM

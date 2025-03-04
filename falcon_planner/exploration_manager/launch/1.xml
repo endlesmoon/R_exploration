@@ -8,7 +8,6 @@
   <arg name="drone_id" default="1"/>
   <arg name="init_x"   default="0"/>
   <arg name="init_y"   default="0"/>
-  <param name="drone_id" value="$(arg drone_id)"/>
   <!-- Load parameter for modules -->
   <rosparam command="load" file="$(find exploration_manager)/config/robot/uav_model_simulator.yaml"/>
   <!-- <rosparam command="load" file="$(find exploration_manager)/config/map/$(arg map_name).yaml"/> -->
@@ -22,7 +21,7 @@
 
   <!-- Launch exploration node -->
   <node pkg="exploration_manager" name="exploration_node_$(arg drone_id)" type="exploration_node" output="log">
-    <param name="drone_id" value="$(arg drone_id)"/>
+    <param name="exploration_manager/drone_id" value="$(arg drone_id)" type="int"/>
     <remap from ="/odom_world" to="$(arg odometry_topic)_$(arg drone_id)"/>
     <remap from ="/voxel_mapping/depth_image" to = "$(arg depth_image)_$(arg drone_id)"/>
     <remap from ="/transformer/sensor_pose_topic"   to = "$(arg sensor_pose_topic)_$(arg drone_id)"/>

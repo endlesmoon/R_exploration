@@ -1,0 +1,13 @@
+Log file created at: 2025/03/03 20:19:55
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0303 20:19:55.192046 104860 exploration_fsm.cpp:114] [FSM] Receive odom from topic /uav_simulator/odometry_2
+W0303 20:19:55.192200 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004395.192203463 Transit state from INIT to WAIT_TRIGGER by FSM
+W0303 20:19:55.735288 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004395.735296055 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+W0303 20:19:55.746872 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004395.746876509 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0303 20:19:55.837255 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004395.837256791 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0303 20:19:56.048347 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004396.048349664 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+W0303 20:19:56.060423 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004396.060428604 Transit state from PLAN_TRAJ to PUB_TRAJ by FSM
+W0303 20:19:56.107263 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004396.107265935 Transit state from PUB_TRAJ to EXEC_TRAJ by FSM
+W0303 20:19:56.463797 104860 exploration_fsm.cpp:937] [FSM] ROS Time: 1741004396.463800708 Transit state from EXEC_TRAJ to PLAN_TRAJ by FSM
+F0303 20:19:57.511997 104860 exploration_manager.cpp:635] Check failed: sop_time <= 1.0 (1.01997 vs. 1) SOP solver internal error detected, solver blocked with unknown error. Please restart the planner

@@ -66,8 +66,7 @@ void ExplorationManager::initialize(ros::NodeHandle &nh) {
 
 //&&&&&&&&&&&&&
   nh.param("/drone_num", ep_->drone_num_, 1);
-  nh.param("drone_id", ep_->drone_id_, 1);
-
+  nh.param("exploration_manager/drone_id", ep_->drone_id_, 1);
   ed_->swarm_state_.resize(ep_->drone_num_);
   ed_->pair_opt_stamps_.resize(ep_->drone_num_);
   ed_->pair_opt_res_stamps_.resize(ep_->drone_num_);
@@ -116,18 +115,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   const ros::Time plan_start_time = t1;
 
   clearExplorationData();
-  //  auto f=hierarchical_grid_->uniform_grids_[0].uniform_grid_;
-  // //  cout<<"sfasflkasjflkas:";
-  // //  for(int i=0;i<f.size();i++) {cout<<i<<" ";
-  // //   switch (f[i].state_) {
-  // //     case GridCell::STATE::ACTIVE:   cout<< "ACTIVE";break;
-  // //     case GridCell::STATE::EXPLORED: cout<< "EXPLORED";break;
-  // //     case GridCell::STATE::UNKNWON:  cout<< "UNKNOWN"; break; // 注意枚举名可能拼写错误（应为 UNKNOWN）
-  // //     default:              cout<< "INVALID";
-  // // }
-  // //   cout<<endl;
-  
-  
+
 
   // Do global and local tour planning and retrieve the next viewpoint
   Vector3d next_pos;
@@ -184,9 +172,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
   vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
-  //cout<<grid.size()<<"sfasfasfa"<<endl;
+  cout<<grid.size()<<"sfasfasfa:";
+  for(auto g:grid) cout<<g<<" ";cout<<endl;
   //&&&&&&&&&&&
-  if(grid.empty()){
+  if(grid.size()<4){
     hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
                                            cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
   }else{
@@ -254,7 +243,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
-    unordered_set<int> settt;cout<<"sfasfafagh:"<<grid.size()<<endl;
+    unordered_set<int> settt;
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@

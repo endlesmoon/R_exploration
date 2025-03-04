@@ -3,11 +3,12 @@
 
 #include "voxel_mapping/map_base.h"
 #include "voxel_mapping/voxel.h"
-
+#include<voxel_mapping/MapData.h>
+//#include"voxel_mapping/map_server.h"
 namespace voxel_mapping {
 class ESDF;
 class OccupancyGrid;
-
+class MapServer;
 class TSDF : public MapBase<TSDFVoxel> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -25,7 +26,7 @@ public:
 
   TSDF() : reset_updated_bbox_(true){};
   ~TSDF(){};
-
+  void setms( MapServer *ms){ms_=ms;}
   void inputPointCloud(const PointCloudType &pointcloud);
 
   FloatingPoint computeDistance(const Position &origin, const Position &point,
@@ -40,10 +41,14 @@ public:
   }
 
   void getUpdatedBox(Eigen::Vector3d &bmin, Eigen::Vector3d &bmax, bool reset = false);
-
+  void inputPointCloudfromother(Transformation T_w_c,const vector<int> &points,int id,
+    vector<float> values,vector<float> weights
+  );
   Config config_;
-
+  
 private:
+  int countup=0;
+  MapServer *ms_;
   bool reset_updated_bbox_;
 
   std::mutex bbox_mutex_;

@@ -123,7 +123,7 @@ MapServer::MapServer(ros::NodeHandle &nh) {
   nh.param("/voxel_mapping/tsdf/raycast_min", tsdf_config.raycast_min_, 0.0);
   nh.param("/voxel_mapping/tsdf/raycast_max", tsdf_config.raycast_max_, 5.0);
   nh.param("/voxel_mapping/tsdf/epsilon", tsdf_config.epsilon_, 1e-4);
-
+  nh.param("exploration_manager/drone_id",drone_id,1);
   if (config_.mode_ == MapServer::Config::Mode::AIRSIM)
     tsdf_config.depth_axis_ = TSDF::Config::DepthAxis::Y;
   else
@@ -154,7 +154,7 @@ MapServer::MapServer(ros::NodeHandle &nh) {
   tsdf_->initRaycaster();
   tsdf_->setESDF(esdf_);
   tsdf_->setOccupancyGrid(occupancy_grid_);
-
+  tsdf_->setms(this);
   // Initialize ESDF
   esdf_->initMapData();
   esdf_->initRaycaster();
@@ -165,7 +165,7 @@ MapServer::MapServer(ros::NodeHandle &nh) {
   occupancy_grid_->initMapData();
   occupancy_grid_->initRaycaster();
   occupancy_grid_->setTSDF(tsdf_);
-
+  
   // Initialize publishers
   tsdf_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/voxel_mapping/tsdf", 10);
   tsdf_slice_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/voxel_mapping/tsdf_slice", 10);
@@ -185,6 +185,9 @@ MapServer::MapServer(ros::NodeHandle &nh) {
   map_coverage_pub_ = nh.advertise<std_msgs::Float32>("/voxel_mapping/map_coverage", 10);
   debug_visualization_pub_ =
       nh.advertise<visualization_msgs::Marker>("/voxel_mapping/debug_visualization", 10);
+//&&&&&&&&&&&
+  mul_pointcloud_pub_=nh.advertise<voxel_mapping::MapData>("/mul_pointcloud",5000);
+  mul_pointcloud_sub_ = nh.subscribe("/mul_pointcloud",5000,&MapServer::mpointCallback,this);
 
   // Initialize callbacks
   depth_sub_ = nh.subscribe("/voxel_mapping/depth_image", 1, &MapServer::depthCallback, this);
@@ -274,6 +277,7 @@ void MapServer::depthCallback(const sensor_msgs::ImageConstPtr &image_msg) {
       TicToc tic3;
       std::lock_guard<std::mutex> lock(this->map_mutex_);
       this->tsdf_->inputPointCloud(pointcloud);
+      //sendmap(pointcloud);
       if (config_.verbose_time_) {
         ROS_INFO("[MapServer] inputPointCloud thread time: %fs", tic3.toc());
       }
@@ -330,6 +334,7 @@ void MapServer::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr &point
       TicToc tic3;
       std::lock_guard<std::mutex> lock(this->map_mutex_);
       this->tsdf_->inputPointCloud(pointcloud);
+      //sendmap(pointcloud);
       if (config_.verbose_time_) {
         ROS_INFO("[MapServer] inputPointCloud thread time: %fs", tic3.toc());
       }
@@ -1161,5 +1166,66 @@ void MapServer::scaleColor(const double value, const double max_value, const dou
   // Apply the color map to convert the value to a grayscale color
   double color_map_scale = 1.0;
   color_value = color_map_scale * scaled_value;
+}
+void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
+  if(point_msg.from_drone_id==drone_id) return;
+  std::cout<<"xsfags:"<<point_msg.ct<<std::endl;
+  std::thread tsdf_thread([this, point_msg]() {
+    this->map_update_counter_++;
+    TicToc tic3;
+    std::lock_guard<std::mutex> lock(this->map_mutex_);
+    Position A_t_A_B(
+      static_cast<FloatingPoint>(point_msg.transform_w_c.translation.x),
+      static_cast<FloatingPoint>(point_msg.transform_w_c.translation.y),
+      static_cast<FloatingPoint>(point_msg.transform_w_c.translation.z)
+  );
+
+  // 提取四元数并调整顺序
+    Rotation q(
+        static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.w),
+        static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.x),
+        static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.y),
+        static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.z)
+    );
+
+    Transformation tem(q,A_t_A_B);
+    
+    this->tsdf_->inputPointCloudfromother(tem,point_msg.points
+      ,point_msg.ct,point_msg.values,point_msg.weights);
+    if (config_.verbose_time_) {
+      ROS_INFO("[MapServer] inputPointCloud thread time: %fs", tic3.toc());
+    }
+    // Warn if inputPointCloud process frequency lower than 10Hz
+    ROS_WARN_COND(tic3.toc() > 0.1, "[MapServer] inputPointCloud thread time too long: %fs",
+                  tic3.toc());
+    this->map_update_counter_--;
+  });
+  tsdf_thread.detach();
+}
+void MapServer::sendmap(voxel_mapping::MapData &tem){
+  // voxel_mapping::MapData tem;
+  // tem.from_drone_id=drone_id;
+  // tem.time=ros::Time::now().toSec();
+  // Transformation t(pointcloud.sensor_orientation_.cast<FloatingPoint>(),
+  // pointcloud.sensor_origin_.head<3>().cast<FloatingPoint>());
+  // // 平移赋值
+  // tem.transform_w_c.translation.x = t.getPosition().x();
+  // tem.transform_w_c.translation.y = t.getPosition().y();
+  // tem.transform_w_c.translation.z = t.getPosition().z();
+
+  // // 四元数赋值（直接按 x, y, z, w 顺序写入）
+  // tem.transform_w_c.rotation.x = t.getRotation().x();
+  // tem.transform_w_c.rotation.y = t.getRotation().y();
+  // tem.transform_w_c.rotation.z = t.getRotation().z();
+  // tem.transform_w_c.rotation.w = t.getRotation().w();
+  // vector<int> ps;
+  // for (const auto &point : pointcloud.points) {
+  //   Position point_w = Position(point.x, point.y, point.z);
+  //   int add=this->tsdf_->positionToAddress(point_w);
+  //   ps.push_back(add);
+  // }
+  // tem.points=ps;
+  tem.from_drone_id=drone_id;
+  mul_pointcloud_pub_.publish(tem);
 }
 } // namespace voxel_mapping

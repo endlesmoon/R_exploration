@@ -19,13 +19,13 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-
 #include "tic_toc.h"
 #include "transformer/transformer.h"
 #include "voxel_mapping/esdf.h"
 #include "voxel_mapping/occupancy_grid.h"
 #include "voxel_mapping/tsdf.h"
-
+//&&&&&&
+#include <voxel_mapping/MapData.h>
 using std::shared_ptr;
 using std::string;
 
@@ -115,7 +115,8 @@ public:
   void depthCallback(const sensor_msgs::ImageConstPtr &image_msg);
   void pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr &pointcloud_msg);
   void globalMapCallback(const sensor_msgs::PointCloud2ConstPtr &pointcloud_msg);
-
+  //&&&&&&&
+  void mpointCallback(const voxel_mapping::MapData &point_msg);
   // Debug
   bool saveMapPCDCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
   void testESDFCallback(const geometry_msgs::PoseStamped &msg);
@@ -167,10 +168,10 @@ public:
   void loadMapFromPCL(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void scaleColor(const double value, const double max_value, const double min_value,
                   double &color_value);
-
+                  void sendmap(voxel_mapping::MapData &tem);
 private:
   Config config_;
-
+  
   ros::Subscriber depth_sub_, pointcloud_sub_, global_map_sub_;
 
   ros::Publisher tsdf_pub_, tsdf_slice_pub_;
@@ -181,7 +182,12 @@ private:
   ros::Publisher depth_pointcloud_pub_;
   ros::Publisher map_coverage_pub_;
   ros::Publisher debug_visualization_pub_;
-
+  //&&&&&&&&&
+  ros::Subscriber mul_pointcloud_sub_;
+  ros::Publisher mul_pointcloud_pub_;
+  int drone_id;
+  //&&&&&&
+  
   ros::Timer publish_map_timer_;
 
   ros::ServiceServer save_map_srv_;

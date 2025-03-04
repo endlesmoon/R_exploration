@@ -90,7 +90,7 @@ public:
 
   MapConfig map_config_;
 
-protected:
+//protected:
   typename MapData::Ptr map_data_;
   RayCaster::Ptr raycaster_;
 };

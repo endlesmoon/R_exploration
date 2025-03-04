@@ -17,12 +17,23 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   eigen_conversions
   exploration_utils
+  message_generation
+)
+
+add_message_files(
+   FILES
+   MapData.msg
+)
+generate_messages(
+  DEPENDENCIES
+  # std_msgs
+  geometry_msgs
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES voxel_mapping
-  CATKIN_DEPENDS roscpp std_msgs exploration_utils
+  CATKIN_DEPENDS roscpp std_msgs exploration_utils message_runtime
   # DEPENDS system_lib
 )
 
