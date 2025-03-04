@@ -19,6 +19,7 @@
 
 //&&&&&&&
 #include <lkh_mtsp_solver/SolveMTSP.h>
+//#include <lkh_tsp_solver/SolveTSP.h>
 using namespace Eigen;
 
 namespace fast_planner {
@@ -77,7 +78,8 @@ void ExplorationManager::initialize(ros::NodeHandle &nh) {
   }
   acvrp_client_ = nh.serviceClient<lkh_mtsp_solver::SolveMTSP>(
     "/solve_acvrp_" + to_string(ep_->drone_id_), true);
-
+  tsp_client_ =
+    nh.serviceClient<lkh_mtsp_solver::SolveMTSP>("/solve_tsp_" + to_string(ep_->drone_id_), true);
     nh.param("exploration/mtsp_dir", ep_->mtsp_dir_, string("null"));
 
 
@@ -218,6 +220,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     double cost;
     cout<<"sfdasfasfa1"<<endl;
     solveTSP(cost_matrix2, hgrid_tsp_config, indices, cost);//tsp算法解决路径选择问题
+
+    
+
+
     cout<<"sfdasfasfa2"<<endl;
     hgrid_tsp2_time = (ros::Time::now() - t1).toSec();
 
@@ -1564,46 +1570,55 @@ void ExplorationManager::refineLocalTourHGrid(
 
 void ExplorationManager::solveTSP(const Eigen::MatrixXd &cost_matrix, const TSPConfig &config,
                                         vector<int> &result_indices, double &total_cost) {
-  CHECK_EQ(cost_matrix.rows(), cost_matrix.cols()) << "TSP cost matrix must be square";
-
-  ros::Time t1 = ros::Time::now();
-  // Write params and cost matrix to problem file
-  ofstream prob_file(ep_->tsp_dir_ + "/" + config.problem_name_ + ".tsp");
-
-  // Problem specification part, follow the format of TSPLIB
-  string prob_spec = "NAME : " + config.problem_name_ +
-                     "\nTYPE : ATSP\nDIMENSION : " + to_string(config.dimension_) +
-                     "\nEDGE_WEIGHT_TYPE : "
-                     "EXPLICIT\nEDGE_WEIGHT_FORMAT : FULL_MATRIX\nEDGE_WEIGHT_SECTION\n";
-  prob_file << prob_spec;
-
-  // Use Asymmetric TSP
-  const int scale = 100;
-  for (int i = 0; i < config.dimension_; ++i) {
-    for (int j = 0; j < config.dimension_; ++j) {
-      int int_cost = cost_matrix(i, j) * scale;
-      prob_file << int_cost << " ";
+  ros::Time t1 = ros::Time::now();                            
+  const int dimension = cost_matrix.rows();
+  const int drone_num = 1;
+  ofstream file(ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".atsp");
+  file << "NAME : amtsp\n";
+  file << "TYPE : ATSP\n";
+  file << "DIMENSION : " + to_string(dimension) + "\n";
+  file << "EDGE_WEIGHT_TYPE : EXPLICIT\n";
+  file << "EDGE_WEIGHT_FORMAT : FULL_MATRIX\n";
+  file << "EDGE_WEIGHT_SECTION\n";
+  for (int i = 0; i < dimension; ++i) {
+    for (int j = 0; j < dimension; ++j) {
+      int int_cost = 100 * cost_matrix(i, j);
+      file << int_cost << " ";
     }
-    prob_file << "\n";
+    file << "\n";
   }
+  file.close();
 
-  prob_file << "EOF";
-  prob_file.close();
+  // Create par file
+  file.open(ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".par");
+  file << "SPECIAL\n";
+  file << "PROBLEM_FILE = " + ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".atsp\n";
+  file << "SALESMEN = " << to_string(drone_num) << "\n";
+  file << "MTSP_OBJECTIVE = MINSUM\n";
+  // file << "MTSP_MIN_SIZE = " << to_string(min(int(ed_->frontiers_.size()) / drone_num, 4)) <<
+  // "\n"; file << "MTSP_MAX_SIZE = "
+  //      << to_string(max(1, int(ed_->frontiers_.size()) / max(1, drone_num - 1))) << "\n";
+  file << "RUNS = 1\n";
+  file << "TRACE_LEVEL = 0\n";
+  file << "TOUR_FILE = " + ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".tour\n";
+  file.close();
 
-  // ROS_INFO("[ExplorationManager] TSP problem file time: %.2f ms",
-  //          (ros::Time::now() - t1).toSec() * 1000);
+  auto par_dir = ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".atsp";
   t1 = ros::Time::now();
 
-  // Call LKH TSP solver
-  solveTSPLKH((ep_->tsp_dir_ + "/" + config.problem_name_ + ".par").c_str());
+  lkh_mtsp_solver::SolveMTSP srv;
+  srv.request.prob = 2;
 
-  // ROS_INFO("[ExplorationManager] TSP solver time: %.2f ms",
-  //          (ros::Time::now() - t1).toSec() * 1000);
+  tsp_client_.call(srv);
+  double mtsp_time = (ros::Time::now() - t1).toSec();
+  // std::cout << "AmTSP time: " << mtsp_time << std::endl;
 
-  // Read result indices from the tour section of result file
-  ifstream fin(ep_->tsp_dir_ + "/" + config.problem_name_ + ".txt");
+  // Read results
+  t1 = ros::Time::now();
+
+  ifstream fin(ep_->mtsp_dir_ + "/amtsp2_" + to_string(ep_->drone_id_) + ".tour");
   string res;
-  // Go to tour section
+  vector<int> ids;
   while (getline(fin, res)) {
     // Read total cost
     if (res.find("COMMENT : Length") != std::string::npos) {
@@ -1638,6 +1653,91 @@ void ExplorationManager::solveTSP(const Eigen::MatrixXd &cost_matrix, const TSPC
     result_indices.push_back(id - config.result_id_offset_);
   }
   fin.close();
+
+
+
+
+
+
+
+
+
+
+
+  // CHECK_EQ(cost_matrix.rows(), cost_matrix.cols()) << "TSP cost matrix must be square";
+
+  // ros::Time t1 = ros::Time::now();
+  // // Write params and cost matrix to problem file
+  // ofstream prob_file(ep_->tsp_dir_ + "/" + config.problem_name_ + ".tsp");
+
+  // // Problem specification part, follow the format of TSPLIB
+  // string prob_spec = "NAME : " + config.problem_name_ +
+  //                    "\nTYPE : ATSP\nDIMENSION : " + to_string(config.dimension_) +
+  //                    "\nEDGE_WEIGHT_TYPE : "
+  //                    "EXPLICIT\nEDGE_WEIGHT_FORMAT : FULL_MATRIX\nEDGE_WEIGHT_SECTION\n";
+  // prob_file << prob_spec;
+
+  // // Use Asymmetric TSP
+  // const int scale = 100;
+  // for (int i = 0; i < config.dimension_; ++i) {
+  //   for (int j = 0; j < config.dimension_; ++j) {
+  //     int int_cost = cost_matrix(i, j) * scale;
+  //     prob_file << int_cost << " ";
+  //   }
+  //   prob_file << "\n";
+  // }
+
+  // prob_file << "EOF";
+  // prob_file.close();
+
+  // // ROS_INFO("[ExplorationManager] TSP problem file time: %.2f ms",
+  // //          (ros::Time::now() - t1).toSec() * 1000);
+  // t1 = ros::Time::now();
+
+  // // Call LKH TSP solver
+  // solveTSPLKH((ep_->tsp_dir_ + "/" + config.problem_name_ + ".par").c_str());
+
+  // // ROS_INFO("[ExplorationManager] TSP solver time: %.2f ms",
+  // //          (ros::Time::now() - t1).toSec() * 1000);
+
+  // // Read result indices from the tour section of result file
+  // ifstream fin(ep_->tsp_dir_ + "/" + config.problem_name_ + ".txt");
+  // string res;
+  // // Go to tour section
+  // while (getline(fin, res)) {
+  //   // Read total cost
+  //   if (res.find("COMMENT : Length") != std::string::npos) {
+  //     int cost_res = stoi(res.substr(19));
+  //     total_cost = (double)cost_res / 100.0;
+  //     // ROS_INFO("[ExplorationManager] TSP problem name: %s, total cost: %.2f",
+  //     //          config.problem_name_.c_str(), cost);
+  //     LOG(INFO) << "[ExplorationManager] TSP problem name: " << config.problem_name_
+  //               << ", total cost: " << total_cost;
+  //   }
+  //   if (res.compare("TOUR_SECTION") == 0)
+  //     break;
+  // }
+  // // Read indices
+  // while (getline(fin, res)) {
+  //   int id = stoi(res);
+
+  //   // Ignore the first state (current state)
+  //   if (id == 1 && config.skip_first_) {
+  //     continue;
+  //   }
+
+  //   // Ignore the last state (next grid or virtual depot)
+  //   if (id == config.dimension_ && config.skip_last_) {
+  //     break;
+  //   }
+
+  //   // EOF
+  //   if (id == -1)
+  //     break;
+
+  //   result_indices.push_back(id - config.result_id_offset_);
+  // }
+  // fin.close();
 }
 
 void ExplorationManager::initializeHierarchicalGrid(const Vector3d &pos,

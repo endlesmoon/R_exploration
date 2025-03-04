@@ -47,7 +47,7 @@ public:
                              const Vector3d &yaw, const Vector3d &next_pos, const double &next_yaw);
 
   void initializeHierarchicalGrid(const Vector3d &pos, const Vector3d &vel);
-
+  
   shared_ptr<ExplorationData> ed_;
   shared_ptr<ExplorationParam> ep_;
   shared_ptr<ExplorationExpData> ee_;
@@ -70,7 +70,7 @@ private:
   };
 
 //&&&&&&&
-ros::ServiceClient acvrp_client_;
+ros::ServiceClient acvrp_client_,tsp_client_;
 
 
 
@@ -88,7 +88,6 @@ ros::ServiceClient acvrp_client_;
 
   void solveTSP(const Eigen::MatrixXd &cost_matrix, const TSPConfig &config,
                 vector<int> &result_indices, double &total_cost);
-
   void clearExplorationData();
 
   template <typename T>
