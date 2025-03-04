@@ -1187,7 +1187,7 @@ void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
   }
   rem_ct[id-1].insert(point_msg.ct);
   
-  std::cout<<"xsfags:"<<point_msg.ct<<std::endl;
+ // std::cout<<"xsfags:"<<point_msg.ct<<std::endl;
   std::thread tsdf_thread([this, point_msg]() {
     this->map_update_counter_++;
     TicToc tic3;

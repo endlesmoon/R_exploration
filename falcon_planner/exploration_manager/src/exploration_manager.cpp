@@ -172,6 +172,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
   vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
+
   hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
   if (cost_matrix2.rows() <= 1||cost_matrix2.cols()<=1){
   cost_matrix2 = Eigen::MatrixXd(); 
@@ -198,14 +199,15 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     ed_->grid_tour2_.push_back(hierarchical_grid_->getLayerCellCenters(
         0, cost_mat_id_to_cell_center_id[1].first, cost_mat_id_to_cell_center_id[1].second));
     next_cell_id = cost_mat_id_to_cell_center_id[1].first;
-
+    //ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cost_mat_id_to_cell_center_id[0].first);
+    //ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cost_mat_id_to_cell_center_id[1].first);
     grid_tour2_cost.clear();
     grid_tour2_cost.push_back(cost_matrix2(0, 1));
   } else {
     // multiple centers in one cell --> grid_tour2_
 
     TSPConfig hgrid_tsp_config;
-    hgrid_tsp_config.dimension_ = cost_matrix2.rows();
+    hgrid_tsp_config.dimension_ = min(cost_matrix2.rows(),cost_matrix2.cols());
     hgrid_tsp_config.problem_name_ = "coverage_path";
     hgrid_tsp_config.skip_first_ = true;
     hgrid_tsp_config.result_id_offset_ = 1; // get mat id not cell id
@@ -214,8 +216,9 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
     vector<int> indices;
     double cost;
+    cout<<"sfdasfasfa1"<<endl;
     solveTSP(cost_matrix2, hgrid_tsp_config, indices, cost);//tsp算法解决路径选择问题
-
+    cout<<"sfdasfasfa2"<<endl;
     hgrid_tsp2_time = (ros::Time::now() - t1).toSec();
 
     ed_->grid_tour2_.clear();
@@ -233,7 +236,6 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     unordered_set<int> settt;
-    rem_grid.clear();
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -259,10 +261,12 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       //            next_cell_id, next_center_id);  
       }
       //&&&&&
+  
       if(settt.find(cell_id)==settt.end()){
-      ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
-        settt.insert(cell_id);
-    }
+        ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
+          settt.insert(cell_id);
+        }
+      
 
 
       // Get center from cell cell_id
@@ -270,9 +274,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       hierarchical_grid_->getLayerCellCenters(0, cell_id, center_id, center);
       ed_->grid_tour2_.push_back(center);
       ed_->grid_tour2_cell_centers_id_.push_back(make_pair(cell_id, center_id));
-
+      cout<<"sfdasfasfa3"<<endl;
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
+      cout<<"sfdasfasfa4"<<endl;
       last_index = indices[i];
     } settt.clear();
     tsp_indices = indices;
@@ -307,7 +312,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       last_grid_tour2_cost_size = grid_tour2_cost.size();
     }
   }
- 
+ //&&&&&&&&&&&&&&上面代码有问题
   // print sizes
   ROS_INFO("[ExplorationManager] Hgrid tour 2 cost matrix size: %d, indices size: %d, grid "
            "tour 2 size: %d",
