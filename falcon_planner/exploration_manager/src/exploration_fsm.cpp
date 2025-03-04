@@ -60,8 +60,7 @@ nh.param("/exploration_manager/pair_opt_interval", fp_->pair_opt_interval_, 1.0)
 nh.param("/exploration_manager/repeat_send_num", fp_->repeat_send_num_, 10);
 drone_state_pub_ =
 nh.advertise<exploration_manager::DroneState>("/swarm_expl/drone_state_send", 10);
-drone_state_timer_ =
-nh.createTimer(ros::Duration(0.04), &ExplorationFSM::droneStateTimerCallback, this);
+drone_state_timer_ = nh.createTimer(ros::Duration(0.04), &ExplorationFSM::droneStateTimerCallback, this);
 drone_state_sub_ = nh.subscribe(
   "/swarm_expl/drone_state_recv", 10, &ExplorationFSM::droneStateMsgCallback, this);
 opt_timer_ = nh.createTimer(ros::Duration(0.05), &ExplorationFSM::optTimerCallback, this);
@@ -1058,37 +1057,23 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   // for(auto e:ego_ids) cout<<e<<" ";
   // cout<<endl;
   double alloc_time = (ros::Time::now() - t1).toSec();
-  cout<<"sklhgflkahnglkhnlkz"<<ego_ids.size()<<"  "<<other_ids.size()<<endl;
-  cout<<"ssssssfafasf1:";for(auto e:ego_ids) cout<<e<<" ";
-  cout<<"\nssssssfafasf1;";for(auto e:other_ids) cout<<e<<" "; cout<<endl;
-  // // Check results
-  // double prev_app1 = expl_manager_->computeGridPathCost(state1.pos_, state1.grid_ids_, first_ids1,
-  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
-  // double prev_app2 = expl_manager_->computeGridPathCost(state2.pos_, state2.grid_ids_, first_ids2,
-  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
-  // std::cout << "prev cost: " << prev_app1 << ", " << prev_app2 << ", " << prev_app1 + prev_app2
-  //           << std::endl;
-  // double cur_app1 = expl_manager_->computeGridPathCost(state1.pos_, ego_ids, first_ids1,
-  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
-  // double cur_app2 = expl_manager_->computeGridPathCost(state2.pos_, other_ids, first_ids2,
-  //     { first_ids1, first_ids2 }, { second_ids1, second_ids2 }, true);
-  // std::cout << "cur cost : " << cur_app1 << ", " << cur_app2 << ", " << cur_app1 + cur_app2
-  //           << std::endl;
-  // if (cur_app1 + cur_app2 > prev_app1 + prev_app2 + 0.1) {
-  //   ROS_ERROR("Larger cost after reallocation");
-  //   if (state_!=WAIT_TRIGGER) {
-  //     return;
-  //   }
-  // }
-
-  // if (!state1.grid_ids_.empty() && !ego_ids.empty() &&
-  //     !expl_manager_->hgrid_->isConsistent(state1.grid_ids_[0], ego_ids[0])) {
-  //   ROS_ERROR("Path 1 inconsistent");
-  // }
-  // if (!state2.grid_ids_.empty() && !other_ids.empty() &&
-  //     !expl_manager_->hgrid_->isConsistent(state2.grid_ids_[0], other_ids[0])) {
-  //   ROS_ERROR("Path 2 inconsistent");
-  // }
+  double now_cost=0;
+  for(auto &i:ego_ids){
+    Position p =expl_manager_->hierarchical_grid_->getLayerCellCenter(0,i);
+    vector<Vector3d> pp;
+    double cost = PathCostEvaluator::computeCost(state1.pos_,p,0,0,Eigen::Vector3d(0, 0, 0),0,pp);
+    now_cost+=cost;
+  }
+  for(auto &i:other_ids){
+    Position p =expl_manager_->hierarchical_grid_->getLayerCellCenter(0,i);
+    vector<Vector3d> pp;
+    double cost = PathCostEvaluator::computeCost(state2.pos_,p,0,0,Eigen::Vector3d(0, 0, 0),0,pp);
+    now_cost+=cost;
+  }
+  if(now_cost>pre_cost+0.1){
+    return;
+  }
+  pre_cost=now_cost;
 
   // Update ego and other dominace grids
   auto last_ids2 = state2.grid_ids_;

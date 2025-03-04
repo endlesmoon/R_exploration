@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    MapData.msg
+   CallMap.msg
 )
 generate_messages(
   DEPENDENCIES

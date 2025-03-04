@@ -147,6 +147,10 @@ MapServer::MapServer(ros::NodeHandle &nh) {
     occupancy_grid_config.mode_ = OccupancyGrid::Config::MODE::GEN_PCL;
   else
     CHECK(false) << "Unknown occupancy grid mode: " << occupancy_grid_mode;
+  nh.param("/drone_num",drone_num, 1);
+  rem_ct.resize(drone_num);
+  rem_ids.resize(drone_num);
+
 
   /* ----------------------------- Initialization ----------------------------- */
   // Initialize TSDF
@@ -188,7 +192,8 @@ MapServer::MapServer(ros::NodeHandle &nh) {
 //&&&&&&&&&&&
   mul_pointcloud_pub_=nh.advertise<voxel_mapping::MapData>("/mul_pointcloud",5000);
   mul_pointcloud_sub_ = nh.subscribe("/mul_pointcloud",5000,&MapServer::mpointCallback,this);
-
+  call_map_sub_=nh.subscribe("/call_map",5000,&MapServer::callmapCallback,this);
+  call_map_pub_=nh.advertise<voxel_mapping::CallMap>("/call_map",5000);
   // Initialize callbacks
   depth_sub_ = nh.subscribe("/voxel_mapping/depth_image", 1, &MapServer::depthCallback, this);
   pointcloud_sub_ =
@@ -1168,7 +1173,20 @@ void MapServer::scaleColor(const double value, const double max_value, const dou
   color_value = color_map_scale * scaled_value;
 }
 void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
-  if(point_msg.from_drone_id==drone_id) return;
+  int id=point_msg.from_drone_id;
+  if(id==drone_id) return;
+  if(point_msg.ct-rem_ids[id-1]>1){
+    for(int i=rem_ids[id-1]+1;i<point_msg.ct;i++){
+      if(rem_ct[id-1].find(i)==rem_ct[id-1].end()) callmap(id,i);
+    }
+  }else{
+    rem_ids[id-1]++;
+  }
+  if(rem_ct[id-1].find(point_msg.ct)!=rem_ct[id-1].end()){
+    return;
+  }
+  rem_ct[id-1].insert(point_msg.ct);
+  
   std::cout<<"xsfags:"<<point_msg.ct<<std::endl;
   std::thread tsdf_thread([this, point_msg]() {
     this->map_update_counter_++;
@@ -1179,8 +1197,6 @@ void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
       static_cast<FloatingPoint>(point_msg.transform_w_c.translation.y),
       static_cast<FloatingPoint>(point_msg.transform_w_c.translation.z)
   );
-
-  // 提取四元数并调整顺序
     Rotation q(
         static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.w),
         static_cast<FloatingPoint>(point_msg.transform_w_c.rotation.x),
@@ -1191,7 +1207,7 @@ void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
     Transformation tem(q,A_t_A_B);
     
     this->tsdf_->inputPointCloudfromother(tem,point_msg.points
-      ,point_msg.ct,point_msg.values,point_msg.weights);
+      ,point_msg.values,point_msg.weights);
     if (config_.verbose_time_) {
       ROS_INFO("[MapServer] inputPointCloud thread time: %fs", tic3.toc());
     }
@@ -1203,29 +1219,17 @@ void MapServer::mpointCallback(const voxel_mapping::MapData &point_msg){
   tsdf_thread.detach();
 }
 void MapServer::sendmap(voxel_mapping::MapData &tem){
-  // voxel_mapping::MapData tem;
-  // tem.from_drone_id=drone_id;
-  // tem.time=ros::Time::now().toSec();
-  // Transformation t(pointcloud.sensor_orientation_.cast<FloatingPoint>(),
-  // pointcloud.sensor_origin_.head<3>().cast<FloatingPoint>());
-  // // 平移赋值
-  // tem.transform_w_c.translation.x = t.getPosition().x();
-  // tem.transform_w_c.translation.y = t.getPosition().y();
-  // tem.transform_w_c.translation.z = t.getPosition().z();
-
-  // // 四元数赋值（直接按 x, y, z, w 顺序写入）
-  // tem.transform_w_c.rotation.x = t.getRotation().x();
-  // tem.transform_w_c.rotation.y = t.getRotation().y();
-  // tem.transform_w_c.rotation.z = t.getRotation().z();
-  // tem.transform_w_c.rotation.w = t.getRotation().w();
-  // vector<int> ps;
-  // for (const auto &point : pointcloud.points) {
-  //   Position point_w = Position(point.x, point.y, point.z);
-  //   int add=this->tsdf_->positionToAddress(point_w);
-  //   ps.push_back(add);
-  // }
-  // tem.points=ps;
   tem.from_drone_id=drone_id;
   mul_pointcloud_pub_.publish(tem);
+}
+void MapServer::callmap(int id,int ct){
+  voxel_mapping::CallMap tem;
+  tem.drone_id=id;
+  tem.ct=ct;
+  call_map_pub_.publish(tem);
+}
+void MapServer::callmapCallback(const voxel_mapping::CallMap &msg){
+  if(msg.drone_id!=drone_id) return;
+  this->tsdf_->callsendMap(msg.ct);
 }
 } // namespace voxel_mapping

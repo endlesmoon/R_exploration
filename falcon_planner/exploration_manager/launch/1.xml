@@ -39,6 +39,7 @@
 
   <!-- Launch trajectory server -->
   <node pkg="fast_planner" name="traj_server_$(arg drone_id)" type="traj_server" output="log" >
+    <param name="exploration_manager/drone_id" value="$(arg drone_id)" type="int"/>
     <remap from="/planning/pos_cmd" to="/planning/pos_cmd_$(arg drone_id)"/>
     <remap from ="/planning/bspline" to = "/planning/bspline_$(arg drone_id)"/>
     <remap from ="/planning/replan" to = "/planning/replan_$(arg drone_id)"/>

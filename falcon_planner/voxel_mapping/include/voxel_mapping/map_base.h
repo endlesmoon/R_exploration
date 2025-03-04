@@ -7,6 +7,8 @@
 #include <string>
 
 #include <Eigen/Eigen>
+#include<unordered_map>
+#include<unordered_set>
 
 #include "exploration_types.h"
 #include "raycast/raycast.h"
@@ -16,7 +18,8 @@ using std::min;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
-
+using std::unordered_map;
+using std::unordered_set;
 namespace voxel_mapping {
 struct MapConfig {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

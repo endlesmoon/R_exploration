@@ -9,11 +9,11 @@
 #include "std_msgs/Int32.h"
 #include "trajectory/Bspline.h"
 #include "visualization_msgs/Marker.h"
-
+#include <vector>
 namespace backward {
 backward::SignalHandling sh;
 }
-
+using std::vector;
 using fast_planner::NonUniformBspline;
 using fast_planner::PerceptionUtils;
 using fast_planner::Polynomial;
@@ -21,7 +21,15 @@ using fast_planner::PolynomialTraj;
 
 ros::Publisher cmd_vis_pub, pos_cmd_pub, traj_pub, traj_vel_pub;
 quadrotor_msgs::PositionCommand cmd;
-
+std::vector<std::vector<float>> colors = {
+  {1.0, 0.0, 0.0, 1.0},   // 红
+  {1.0, 0.5, 0.0, 1.0},   // 橙
+  {1.0, 1.0, 0.0, 1.0},   // 黄
+  {0.0, 1.0, 0.0, 1.0},   // 绿
+  {0.0, 0.0, 1.0, 1.0},   // 蓝
+  {0.3, 0.0, 0.5, 1.0},   // 靛
+  {0.5, 0.0, 1.0, 1.0}    // 紫
+};
 // Info of generated traj
 vector<NonUniformBspline> traj_;
 double traj_duration_;
@@ -42,7 +50,7 @@ vector<Eigen::Vector3d> traj_cmd_, vel_cmd_;
 // Data for benchmark comparison
 ros::Time flight_start_time, flight_end_time, last_time;
 double energy;
-
+int drone_id;
 double calcPathLength(const vector<Eigen::Vector3d> &path) {
   if (path.empty())
     return 0;
@@ -101,10 +109,10 @@ void displayTrajWithColor(vector<Eigen::Vector3d> path, double resolution, Eigen
   mk.pose.orientation.y = 0.0;
   mk.pose.orientation.z = 0.0;
   mk.pose.orientation.w = 1.0;
-  mk.color.r = color(0);
-  mk.color.g = color(1);
-  mk.color.b = color(2);
-  mk.color.a = color(3);
+  mk.color.r = colors[(drone_id-1)%7][0];
+  mk.color.g = colors[(drone_id-1)%7][1];
+  mk.color.b = colors[(drone_id-1)%7][2];
+  mk.color.a = colors[(drone_id-1)%7][3];
   mk.scale.x = resolution;
   mk.scale.y = resolution;
   mk.scale.z = resolution;
@@ -454,6 +462,8 @@ int main(int argc, char **argv) {
   nh.param("/traj_server/kv_y", cmd.kv[1], -1.0);
   nh.param("/traj_server/kv_z", cmd.kv[2], -1.0);
 
+  nh.param("exploration_manager/drone_id", drone_id, 1);
+  std::cout<<drone_id<<"sdsadas"<<std::endl;
   ROS_INFO("[TrajServer] Initializing");
   ros::Duration(2.0).sleep();
 

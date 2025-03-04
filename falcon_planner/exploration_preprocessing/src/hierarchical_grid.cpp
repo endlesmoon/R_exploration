@@ -1986,7 +1986,7 @@ void UniformGrid::calculateCostMatrixSingleThread(
     const Position &cur_pos, const Eigen::Vector3d &cur_vel, Eigen::MatrixXd &cost_matrix,
     std::map<int, std::pair<int, int>> &cost_mat_id_to_cell_center_id) {
   // ROS_INFO("[UniformGrid] Calculate cost matrix using multi-threading");
-
+  auto tem=uniform_grid_;
   int dim = 1;     // current position
   int mat_idx = 1; // skip 0 as it is reserved for current position
       /*
@@ -1995,7 +1995,7 @@ void UniformGrid::calculateCostMatrixSingleThread(
       所有center编号
       key 为所有cell顺序center编号，value为(所属cell id和在center中的顺序(先free 后unkonwn))      
       */
-  for (const GridCell &grid_cell : uniform_grid_) {
+  for (const GridCell &grid_cell : tem) {
     // Only free subspaces and unknown subspaces are considered in CP
     dim += grid_cell.centers_free_active_.size();
     dim += grid_cell.centers_unknown_active_.size();
@@ -2023,7 +2023,7 @@ void UniformGrid::calculateCostMatrixSingleThread(
   */
   // From current position to all zone centers
   mat_idx = 1;
-  for (const GridCell &grid_cell : uniform_grid_) {
+  for (const GridCell &grid_cell : tem) {
     double cost = 0.0;
     for (const Position &center_free : grid_cell.centers_free_active_) {
       if ((cur_pos - center_free).norm() > config_.hybrid_search_radius_) {
@@ -2074,7 +2074,7 @@ void UniformGrid::calculateCostMatrixSingleThread(
   */
   // Between all zone centers
   int mat_idx1 = 1;
-  for (const GridCell &grid_cell1 : uniform_grid_) {
+  for (const GridCell &grid_cell1 : tem) {
     // centers_free_active_ and centers_unknown_active_ of grid_cell1
     vector<Position> centers1;
     // centers1 centers_free_active_
@@ -2088,7 +2088,7 @@ void UniformGrid::calculateCostMatrixSingleThread(
     for (int i = 0; i < (int)centers1.size(); i++) {
       int mat_idx2 = 1;
       // Iterate over all centers in the grid_cell2
-      for (const GridCell &grid_cell2 : uniform_grid_) {
+      for (const GridCell &grid_cell2 : tem) {
         // centers_free_active_ and centers_unknown_active_ of grid_cell2
         vector<Position> centers2;
         // centers2 centers_free_active_
@@ -3190,8 +3190,9 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
     if(cur_pos.size()!=cur_vel.size()) return;
     int dim=cur_pos.size();
     int mat_idx=cur_pos.size();
+    auto tem=uniform_grid_;
     for(auto ind:grid_id){
-      auto grid_cell=uniform_grid_[ind];
+      auto grid_cell=tem[ind];
       // Only free subspaces and unknown subspaces are considered in CP
       dim += grid_cell.centers_free_active_.size();
       dim += grid_cell.centers_unknown_active_.size();
@@ -3216,7 +3217,7 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
     for(int k=0;k<cur_pos.size();k++){
       mat_idx = cur_pos.size();
       for (auto ind:grid_id) {
-        auto grid_cell=uniform_grid_[ind];
+        auto grid_cell=tem[ind];
         double cost = 0.0;
         for (const Position &center_free : grid_cell.centers_free_active_) {
           if ((cur_pos[k] - center_free).norm() > config_.hybrid_search_radius_) {
@@ -3244,7 +3245,7 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
  // cout<<"start"<<endl;
   int mat_idx1 = cur_pos.size();
   for (auto ind1:grid_id) {
-    auto grid_cell1=uniform_grid_[ind1];
+    auto grid_cell1=tem[ind1];
     vector<Position> centers1;
     centers1.insert(centers1.end(), grid_cell1.centers_free_active_.begin(),
                     grid_cell1.centers_free_active_.end());
@@ -3257,7 +3258,7 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
       int mat_idx2 = cur_pos.size();
       // Iterate over all centers in the grid_cell2
       for (auto ind2:grid_id) {
-        auto grid_cell2=uniform_grid_[ind2];
+        auto grid_cell2=tem[ind2];
         // centers_free_active_ and centers_unknown_active_ of grid_cell2
         vector<Position> centers2;
         // centers2 centers_free_active_

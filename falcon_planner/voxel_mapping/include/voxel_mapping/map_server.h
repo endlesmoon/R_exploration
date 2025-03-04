@@ -26,6 +26,7 @@
 #include "voxel_mapping/tsdf.h"
 //&&&&&&
 #include <voxel_mapping/MapData.h>
+#include <voxel_mapping/CallMap.h>
 using std::shared_ptr;
 using std::string;
 
@@ -120,7 +121,7 @@ public:
   // Debug
   bool saveMapPCDCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
   void testESDFCallback(const geometry_msgs::PoseStamped &msg);
-
+  void callmapCallback(const voxel_mapping::CallMap &msg);
   void publishMapTimerCallback(const ros::TimerEvent &event);
   void publishTSDF();
   void publishTSDFSlice();
@@ -168,7 +169,8 @@ public:
   void loadMapFromPCL(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void scaleColor(const double value, const double max_value, const double min_value,
                   double &color_value);
-                  void sendmap(voxel_mapping::MapData &tem);
+  void sendmap(voxel_mapping::MapData &tem);
+  void callmap(int id,int ct);
 private:
   Config config_;
   
@@ -183,9 +185,12 @@ private:
   ros::Publisher map_coverage_pub_;
   ros::Publisher debug_visualization_pub_;
   //&&&&&&&&&
-  ros::Subscriber mul_pointcloud_sub_;
-  ros::Publisher mul_pointcloud_pub_;
+  ros::Subscriber mul_pointcloud_sub_,call_map_sub_;
+  ros::Publisher mul_pointcloud_pub_,call_map_pub_;
   int drone_id;
+  int drone_num;
+  vector<unordered_set<int>> rem_ct;
+  vector<int> rem_ids;
   //&&&&&&
   
   ros::Timer publish_map_timer_;

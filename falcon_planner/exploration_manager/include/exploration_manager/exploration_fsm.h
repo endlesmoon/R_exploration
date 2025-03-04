@@ -81,7 +81,7 @@ private:
   ros::Timer drone_state_timer_, opt_timer_, swarm_traj_timer_;
   void findUnallocated(const vector<int>& actives, vector<int>& missed);
  
-
+  double pre_cost=10000000;
   bool frontier_ready_;
 
   ros::Time trajectory_start_time_;

@@ -41,12 +41,15 @@ public:
   }
 
   void getUpdatedBox(Eigen::Vector3d &bmin, Eigen::Vector3d &bmax, bool reset = false);
-  void inputPointCloudfromother(Transformation T_w_c,const vector<int> &points,int id,
+  void inputPointCloudfromother(Transformation T_w_c,const vector<int> &points,
     vector<float> values,vector<float> weights
   );
   Config config_;
-  
+  void callsendMap(int ct);
 private:
+  unordered_map<int,vector<int>> rem_pcs;
+  unordered_map<int,vector<float>> rem_wts,rem_vls;
+  unordered_map<int,Transformation> rem_twc;
   int countup=0;
   MapServer *ms_;
   bool reset_updated_bbox_;

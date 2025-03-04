@@ -5,8 +5,8 @@
   <arg name="odometry_topic" value="/uav_simulator/odometry"/>
   <arg name="sensor_pose_topic" value="/uav_simulator/sensor_pose"/>
   <arg name="depth_image" value="/uav_simulator/depth_image"/>
-  <arg name="drone_num" value="2" />
-  <param name="drone_num"     value="2"/>
+  <arg name="drone_num" value="4" />
+  <param name="drone_num"     value="4"/>
 
   <!-- Load parameter for modules -->
   <rosparam command="load" file="$(find exploration_manager)/config/map/$(arg map_name).yaml"/>
@@ -19,6 +19,16 @@
   </include>
   <include file="$(find exploration_manager)/launch/1.xml">
     <arg name="drone_id" value="2"/>
+    <arg name="init_x"   value="0"/>
+    <arg name="init_y"   value="1"/>
+  </include>
+    <include file="$(find exploration_manager)/launch/1.xml">
+    <arg name="drone_id" value="3"/>
+    <arg name="init_x"   value="1"/>
+    <arg name="init_y"   value="0"/>
+  </include>
+  <include file="$(find exploration_manager)/launch/1.xml">
+    <arg name="drone_id" value="4"/>
     <arg name="init_x"   value="1"/>
     <arg name="init_y"   value="1"/>
   </include>

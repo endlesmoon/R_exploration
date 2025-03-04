@@ -172,25 +172,14 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
   vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
-  cout<<grid.size()<<"sfasfasfa:";
-  for(auto g:grid) cout<<g<<" ";cout<<endl;
-  //&&&&&&&&&&&
-  if(grid.size()<4){
-    hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
-                                           cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
-  }else{
-    //cout<<"sfafsagagaslg  ";
-   // for(auto g:grid) cout<<g<<" ";
-   // cout<<endl;
-    hierarchical_grid_->calculateCostMatrix2fromcells({pos}
-      ,{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
+  hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
+  if (cost_matrix2.rows() <= 1||cost_matrix2.cols()<=1){
+  cost_matrix2 = Eigen::MatrixXd(); 
+  hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
+    cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
   }
-  
+
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
-    // cout<<endl<<"sfasfsafaf1: ";
-    // for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
-    // cout<<endl<<"sfasfsafaf2: ";
-    // for(int i :ed_->swarm_state_[0].grid_ids_) cout<<i<<" ";cout<<endl;
 
   double hgrid_cost_matrix2_time = (ros::Time::now() - t1).toSec();
   double hgrid_tsp2_time = 0.0;
@@ -244,6 +233,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     unordered_set<int> settt;
+    rem_grid.clear();
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -274,7 +264,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
         settt.insert(cell_id);
     }
 
-      cout<<cell_id<<" ";
+
       // Get center from cell cell_id
       Position center;
       hierarchical_grid_->getLayerCellCenters(0, cell_id, center_id, center);
@@ -284,7 +274,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
       last_index = indices[i];
-    } settt.clear();cout<<endl;
+    } settt.clear();
     tsp_indices = indices;
 
     double grid_tour2_cost_sum = 0.0;
