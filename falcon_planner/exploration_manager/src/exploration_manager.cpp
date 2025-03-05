@@ -174,14 +174,21 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
   vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
-
+  // if(grid.empty()){
+  //   hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
+  //     cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
+  // }else
+  //   hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
+  // if (cost_matrix2.rows() <= 1||cost_matrix2.cols()<=1){
+  // cost_matrix2 = Eigen::MatrixXd(); 
+  // hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
+  //   cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
+  // }
   hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
-  if (cost_matrix2.rows() <= 1||cost_matrix2.cols()<=1){
-  cost_matrix2 = Eigen::MatrixXd(); 
-  hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
-    cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
+  if(cost_matrix2.rows() <= 1&&ed_->frontiers_.size()!=0){
+    hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
+      cost_mat_id_to_cell_center_id);
   }
-
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
 
   double hgrid_cost_matrix2_time = (ros::Time::now() - t1).toSec();
@@ -193,8 +200,9 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 计算center顺序 tsp
 */
   if (cost_matrix2.rows() <= 1) {
-    ROS_WARN("[ExplorationManager] Cost matrix 2 size: %d", cost_matrix2.rows());
-    return NO_GRID;
+    //ROS_WARN("[ExplorationManager] Cost matrix 2 size: %d", cost_matrix2.rows());
+    if(ed_->frontiers_.size()==0) return NO_GRID;
+    return FAIL;
   } else if (cost_matrix2.rows() == 2) {
     ed_->grid_tour2_.clear();
     ed_->grid_tour2_.push_back(pos);

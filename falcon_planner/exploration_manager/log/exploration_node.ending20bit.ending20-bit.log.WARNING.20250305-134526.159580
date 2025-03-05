@@ -1,0 +1,7 @@
+Log file created at: 2025/03/05 13:45:26
+Running on machine: ending20bit
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+W0305 13:45:26.592024 159580 exploration_fsm.cpp:113] [FSM] Receive odom from topic /uav_simulator/odometry_3
+W0305 13:45:26.592159 159580 exploration_fsm.cpp:937] [FSM] ROS Time: 1741153526.592161222 Transit state from INIT to WAIT_TRIGGER by FSM
+W0305 13:45:27.127250 159580 exploration_fsm.cpp:937] [FSM] ROS Time: 1741153527.127258754 Transit state from WAIT_TRIGGER to PLAN_TRAJ by frontierCallback
+F0305 13:45:27.132455 159580 exploration_fsm.cpp:390] Check failed: expl_manager_->ed_->frontiers_.size() == 0 (5 vs. 0) Frontier size: 5, but no grid

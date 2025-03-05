@@ -52,7 +52,7 @@ void ExplorationFSM::init(ros::NodeHandle &nh) {
   replan_pub_ = nh.advertise<std_msgs::Int32>("/planning/replan", 10);
   bspline_pub_ = nh.advertise<trajectory::Bspline>("/planning/bspline", 10);
   uncertainty_pub_ = nh.advertise<std_msgs::Float32>("/planning/uncertainty", 10);
-
+  
 
 /////&&&&&&&&&&&&&&&&&&&&&&
 nh.param("/exploration_manager/attempt_interval", fp_->attempt_interval_, 0.2);
@@ -71,6 +71,7 @@ opt_res_pub_ =
     nh.advertise<exploration_manager::PairOptResponse>("/swarm_expl/pair_opt_res_send", 10);
 opt_res_sub_ = nh.subscribe("/swarm_expl/pair_opt_res_recv", 100,
   &ExplorationFSM::optResMsgCallback, this, ros::TransportHints().tcpNoDelay());
+  pre_cost=vector<double>(expl_manager_->ep_->drone_num_,1000000);
 }
 
 void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
@@ -382,7 +383,7 @@ void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
       transitState(PUB_TRAJ, "FSM");
     } else if (res == FAIL) { // Keep trying to replan
       fd_->static_state_ = true;
-      ROS_WARN("[FSM] Plan fail");
+     // ROS_WARN("[FSM] Plan fail");
     } else if (res == NO_GRID) {
       fd_->static_state_ = true;
       ROS_WARN("[FSM] Finish exploration: No grid");
@@ -1071,10 +1072,10 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
     double cost = PathCostEvaluator::computeCost(state2.pos_,p,0,0,Eigen::Vector3d(0, 0, 0),0,pp);
     now_cost+=cost;
   }
-  if(now_cost>pre_cost+0.1){
+  if(now_cost>pre_cost[select_id-1]+0.1){
     return;
   }
-  pre_cost=now_cost;
+  pre_cost[select_id-1]=now_cost;
 
   // Update ego and other dominace grids
   auto last_ids2 = state2.grid_ids_;
@@ -1084,9 +1085,9 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   opt.from_drone_id = getId();
   opt.to_drone_id = select_id;
   // opt.msg_type = 1;
-  opt.stamp = tn;//cout<<"sfasfafafas1:";
-  for (auto id : ego_ids) {opt.ego_ids.push_back(id);}//cout<<endl<<"sfasfafafas12:";
-  for (auto id : other_ids) {opt.other_ids.push_back(id);}//cout<<endl;
+  opt.stamp = tn;cout<<"sfasfafafas1:";
+  for (auto id : ego_ids) {cout<<id<<" ";opt.ego_ids.push_back(id);}cout<<endl<<"sfasfafafas12:";
+  for (auto id : other_ids) {cout<<id<<" ";opt.other_ids.push_back(id);}cout<<endl;
 
   for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_pub_.publish(opt);
 
