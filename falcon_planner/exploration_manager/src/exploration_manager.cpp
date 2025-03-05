@@ -174,20 +174,19 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
   vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
-  // if(grid.empty()){
+
+  // hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
+  // if(cost_matrix2.rows() <= 1&&ed_->frontiers_.size()!=0){
+  //   cout<<"sfafgasgaga"<<grid.size()<<endl;
   //   hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
-  //     cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
-  // }else
-  //   hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
-  // if (cost_matrix2.rows() <= 1||cost_matrix2.cols()<=1){
-  // cost_matrix2 = Eigen::MatrixXd(); 
-  // hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
-  //   cost_mat_id_to_cell_center_id);//a*/bfs获得成本矩阵
+  //     cost_mat_id_to_cell_center_id);
   // }
-  hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
-  if(cost_matrix2.rows() <= 1&&ed_->frontiers_.size()!=0){
+  if(grid.size()==0){
     hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
       cost_mat_id_to_cell_center_id);
+  }
+  else{
+    hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
   }
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
 
@@ -202,6 +201,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   if (cost_matrix2.rows() <= 1) {
     //ROS_WARN("[ExplorationManager] Cost matrix 2 size: %d", cost_matrix2.rows());
     if(ed_->frontiers_.size()==0) return NO_GRID;
+    if(grid.size()!=0) return SLEEPT;
     return FAIL;
   } else if (cost_matrix2.rows() == 2) {
     ed_->grid_tour2_.clear();
@@ -246,7 +246,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     int last_index = 0;
     int id,tem;
     hierarchical_grid_->getLayerPositionCellCenterId(0,pos,id,tem);
-    cout<<"sfashfgkashgka:"<<id<<"  "<<tem<<endl;
+    //cout<<"sfashfgkashgka:"<<id<<"  "<<tem<<endl;
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     unordered_set<int> settt;
@@ -268,7 +268,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // i is mat id
       int cell_id = cell_id_center_id_pair.first;
       int center_id = cell_id_center_id_pair.second;
-      cout<<cell_id<<"  "<<center_id<<endl;
+      //cout<<cell_id<<"  "<<center_id<<endl;
       if (i == 0) {
         next_cell_id = cell_id;
         next_cell_id_grid_tour2 = cell_id;

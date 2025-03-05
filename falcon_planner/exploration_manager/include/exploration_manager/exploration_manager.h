@@ -28,7 +28,7 @@ struct ExplorationParam;
 struct ExplorationData;
 struct ExplorationExpData;
 
-enum EXPL_RESULT { FAIL, SUCCEED, NO_GRID };
+enum EXPL_RESULT { FAIL, SUCCEED, NO_GRID,SLEEPT };
 
 class ExplorationManager {
 public:

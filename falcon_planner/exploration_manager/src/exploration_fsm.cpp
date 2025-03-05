@@ -32,7 +32,7 @@ void ExplorationFSM::init(ros::NodeHandle &nh) {
   expl_manager_->visualization_ = visualization_;
   state_ = EXPL_STATE::INIT;
   fd_->have_odom_ = false;
-  fd_->state_str_ = {"INIT", "WAIT_TRIGGER", "PLAN_TRAJ", "PUB_TRAJ", "EXEC_TRAJ", "FINISH", "RTB"};
+  fd_->state_str_ = {"INIT", "WAIT_TRIGGER", "PLAN_TRAJ", "PUB_TRAJ", "EXEC_TRAJ", "FINISH", "RTB","SLEEP"};
   fd_->static_state_ = true;
   fd_->triggered_ = false;
 
@@ -392,6 +392,8 @@ void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
           << "Frontier size: " << expl_manager_->ed_->frontiers_.size() << ", but no grid";
 
       transitState(FINISH, "FSM");
+    }else if(res==SLEEPT){
+      transitState(SLEEP, "FSM");
     }
 
     thread vis_thread(&ExplorationFSM::visualize, this);
@@ -399,7 +401,12 @@ void ExplorationFSM::FSMCallback(const ros::TimerEvent &e) {
 
     break;
   }
-
+  case SLEEP:{
+    if(expl_manager_->ed_->frontiers_.size()==0){
+      transitState(FINISH, "FSM");
+    }
+    break;
+  }
   case PUB_TRAJ: {
     bool safe = planner_manager_->checkTrajCollision();
     // if (!safe) {
@@ -1024,7 +1031,7 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   if (select_id == -1) return;
 
   // std::cout << "\nSelect: " << select_id << std::endl;
-  ROS_WARN("Pair opt %d & %d", getId(), select_id);
+  //ROS_WARN("Pair opt %d & %d", getId(), select_id);
   // Do pairwise optimization with selected drone, allocate the union of their domiance grids
   unordered_map<int, char> opt_ids_map;
   auto& state2 = states[select_id - 1];
@@ -1085,9 +1092,16 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   opt.from_drone_id = getId();
   opt.to_drone_id = select_id;
   // opt.msg_type = 1;
-  opt.stamp = tn;cout<<"sfasfafafas1:";
-  for (auto id : ego_ids) {cout<<id<<" ";opt.ego_ids.push_back(id);}cout<<endl<<"sfasfafafas12:";
-  for (auto id : other_ids) {cout<<id<<" ";opt.other_ids.push_back(id);}cout<<endl;
+  int tem1,tem2;
+  //expl_manager_->hierarchical_grid_->getLayerPositionCellCenterId(0,state1.pos_,tem1,tem2);
+  opt.stamp = tn;//cout<<"sfasfafafas1:"<<tem1<<"    ";
+  for (auto id : ego_ids) {//cout<<id<<" ";
+    opt.ego_ids.push_back(id);}
+    //expl_manager_->hierarchical_grid_->getLayerPositionCellCenterId(0,state2.pos_,tem1,tem2);
+    //cout<<endl<<"sfasfafafas12:"<<tem1<<"   ";
+    
+  for (auto id : other_ids) {//cout<<id<<" ";
+    opt.other_ids.push_back(id);}//cout<<endl;
 
   for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_pub_.publish(opt);
 
@@ -1142,7 +1156,9 @@ void ExplorationFSM::optMsgCallback(const exploration_manager::PairOptConstPtr& 
     //   transitState(PLAN_TRAJ, "optMsgCallback");
     //   ROS_WARN("Restart after opt!");
     // }
-
+    if(state_==SLEEP){
+      transitState(PLAN_TRAJ, "optMsgCallback");
+    }
 
   }
   for (int i = 0; i < fp_->repeat_send_num_; ++i) opt_res_pub_.publish(response);
