@@ -38,7 +38,7 @@
   </node>
 
   <!-- Launch trajectory server -->
-  <node pkg="fast_planner" name="traj_server_$(arg drone_id)" type="traj_server" output="screen" >
+  <node pkg="fast_planner" name="traj_server_$(arg drone_id)" type="traj_server" output="log" >
     <param name="exploration_manager/drone_id" value="$(arg drone_id)" type="int"/>
     <remap from="/planning/pos_cmd" to="/planning/pos_cmd_$(arg drone_id)"/>
     <remap from ="/planning/bspline" to = "/planning/bspline_$(arg drone_id)"/>
@@ -54,7 +54,7 @@
     <rosparam command="load" file="$(find mesh_render)/config/mesh_render.yaml"/>
 
     <!-- Odometry Generator -->
-    <node pkg="poscmd_2_odom" name="poscmd_2_odom_$(arg drone_id)" type="poscmd_2_odom" output="screen">
+    <node pkg="poscmd_2_odom" name="poscmd_2_odom_$(arg drone_id)" type="poscmd_2_odom" output="log">
       <param name="init_x"     value="$(arg init_x)"/>
       <param name="init_y"     value="$(arg init_y)"/>
       <remap from="~command" to="/planning/pos_cmd_$(arg drone_id)"/>
@@ -62,18 +62,18 @@
     </node>
 
     <!-- Robot Visualier -->
-    <node pkg="odom_visualization" name="odom_visualization_$(arg drone_id)" type="odom_visualization" output="screen">
+    <node pkg="odom_visualization" name="odom_visualization_$(arg drone_id)" type="odom_visualization" output="log">
       <remap from="~odometry" to="$(arg odometry_topic)"/>
     </node>
   </group>
 
 
-  <node pkg="lkh_mtsp_solver" name="acvrp_solver_$(arg drone_id)" type="mtsp_node" output="screen">
+  <node pkg="lkh_mtsp_solver" name="acvrp_solver_$(arg drone_id)" type="mtsp_node" output="log">
     <param name="exploration/drone_id" value="$(arg drone_id)" type="int"/>
     <param name="exploration/mtsp_dir" value="$(find lkh_mtsp_solver)/resource" type="string"/>
     <param name="exploration/problem_id" value="2" type="int"/>
   </node>
-    <node pkg="lkh_mtsp_solver" name="tsp_solver_$(arg drone_id)" type="mtsp_node" output="screen">
+    <node pkg="lkh_mtsp_solver" name="tsp_solver_$(arg drone_id)" type="mtsp_node" output="log">
     <param name="exploration/drone_id" value="$(arg drone_id)" type="int"/>
     <param name="exploration/mtsp_dir" value="$(find lkh_mtsp_solver)/resource" type="string"/>
     <param name="exploration/problem_id" value="1" type="int"/>

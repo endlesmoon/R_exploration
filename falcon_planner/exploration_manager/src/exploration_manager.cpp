@@ -236,10 +236,13 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 
 
     int last_index = 0;
-
+    int id,tem;
+    hierarchical_grid_->getLayerPositionCellCenterId(0,pos,id,tem);
+    cout<<"sfashfgkashgka:"<<id<<"  "<<tem<<endl;
      //&&&&&
     ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     unordered_set<int> settt;
+    
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -257,6 +260,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // i is mat id
       int cell_id = cell_id_center_id_pair.first;
       int center_id = cell_id_center_id_pair.second;
+      cout<<cell_id<<"  "<<center_id<<endl;
       if (i == 0) {
         next_cell_id = cell_id;
         next_cell_id_grid_tour2 = cell_id;
@@ -282,7 +286,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
       last_index = indices[i];
     } settt.clear();
-    tsp_indices = indices;
+    tsp_indices = indices;cout<<endl;
 
     double grid_tour2_cost_sum = 0.0;
     for (auto cost : grid_tour2_cost) {
