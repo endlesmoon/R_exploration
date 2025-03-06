@@ -68,7 +68,7 @@ private:
     bool skip_last_ = false;
     int result_id_offset_ = 1;
   };
-
+  bool first_init=true;
 //&&&&&&&
 
 ros::ServiceClient acvrp_client_,tsp_client_;

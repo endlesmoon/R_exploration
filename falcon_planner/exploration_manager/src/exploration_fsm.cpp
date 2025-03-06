@@ -971,7 +971,9 @@ void ExplorationFSM::droneStateTimerCallback(const ros::TimerEvent& e) {
   msg.pos = { float(state.pos_[0]), float(state.pos_[1]), float(state.pos_[2]) };
   msg.vel = { float(state.vel_[0]), float(state.vel_[1]), float(state.vel_[2]) };
   msg.yaw = state.yaw_;
-  for (auto id : state.grid_ids_) {msg.grid_ids.push_back(id);}
+  for (auto id : state.grid_ids_) {
+    msg.grid_ids.push_back(id);
+  }
   msg.recent_attempt_time = state.recent_attempt_time_;
   msg.stamp = state.stamp_;
 
@@ -1035,24 +1037,18 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   // Do pairwise optimization with selected drone, allocate the union of their domiance grids
   unordered_map<int, char> opt_ids_map;
   auto& state2 = states[select_id - 1];
-  for (auto id : state1.grid_ids_) opt_ids_map[id] = 1;
-  for (auto id : state2.grid_ids_) opt_ids_map[id] = 1;
+  for (auto id : state1.grid_ids_) {
+    if(expl_manager_->hierarchical_grid_->uniform_grids_[0].uniform_grid_[id].centers_unknown_.size()==0) continue;
+    opt_ids_map[id] = 1;
+  }
+  for (auto id : state2.grid_ids_) {
+    if(expl_manager_->hierarchical_grid_->uniform_grids_[0].uniform_grid_[id].centers_unknown_.size()==0) continue;
+    opt_ids_map[id] = 1;
+  }
   vector<int> opt_ids;
   for (auto pair : opt_ids_map) opt_ids.push_back(pair.first);
 
-  // std::cout << "Pair Opt id: ";
-  // for (auto id : opt_ids) std::cout << id << ", ";
-  // std::cout << "" << std::endl;
 
-  // Find missed grids to reallocated them
-  vector<int> actives, missed;
-  expl_manager_->hierarchical_grid_->getLayerActiveCellIds(0,actives);
-  findUnallocated(actives, missed);
-  //std::cout << "Missed: ";
-  //for (auto id : missed) std::cout << id << ", ";
- // std::cout << "" << std::endl;
-  opt_ids.insert(opt_ids.end(), missed.begin(), missed.end());
-  // Do partition of the grid
   vector<Eigen::Vector3d> positions = { state1.pos_, state2.pos_  };
   vector<Eigen::Vector3d> velocities = { Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0) };
 
@@ -1062,26 +1058,43 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
   // for(auto xx:opt_ids) cout<<xx<<" ";cout<<endl;
   vector<int> ego_ids, other_ids;
   expl_manager_->allocateGrids(positions, velocities, opt_ids, ego_ids, other_ids);
+  cout<<"sdsafaga"<<ego_ids.size()<<"  "<<other_ids.size()<<endl;
+  //if(ego_ids.empty()&&other_ids.empty()) return;
   // cout<<"wssb:";
   // for(auto e:ego_ids) cout<<e<<" ";
   // cout<<endl;
   double alloc_time = (ros::Time::now() - t1).toSec();
-  double now_cost=0;
+  int id,tem;
+  expl_manager_->hierarchical_grid_->getLayerPositionCellCenterId(0,state1.pos_,id,tem);
+  double now_cost=0;cout<<"sfasfsafa:"<<id<<"   ";
   for(auto &i:ego_ids){
+    cout<<i<<"  ";
     Position p =expl_manager_->hierarchical_grid_->getLayerCellCenter(0,i);
     vector<Vector3d> pp;
     double cost = PathCostEvaluator::computeCost(state1.pos_,p,0,0,Eigen::Vector3d(0, 0, 0),0,pp);
     now_cost+=cost;
-  }
+  }cout<<endl;
+  expl_manager_->hierarchical_grid_->getLayerPositionCellCenterId(0,state2.pos_,id,tem);
+  cout<<"sdsadsadas:"<<id<<"   ";
   for(auto &i:other_ids){
+    cout<<i<<"  ";
     Position p =expl_manager_->hierarchical_grid_->getLayerCellCenter(0,i);
     vector<Vector3d> pp;
     double cost = PathCostEvaluator::computeCost(state2.pos_,p,0,0,Eigen::Vector3d(0, 0, 0),0,pp);
     now_cost+=cost;
-  }
-  if(now_cost>pre_cost[select_id-1]+0.1){
-    return;
-  }
+  }cout<<endl;
+  cout<<now_cost<<"  sfdasfgasgass"<<endl;
+  // if(now_cost>pre_cost[select_id-1]-10){
+  //   return;
+  // }
+  // if (!state1.grid_ids_.empty() && !ego_ids.empty() &&
+  //     state1.grid_ids_[0]!=ego_ids[0]) {
+  //   return;
+  // }
+  // if (!state2.grid_ids_.empty() && !other_ids.empty() &&
+  //     state2.grid_ids_[0]!=other_ids[0]) {
+  //   return;
+  // }
   pre_cost[select_id-1]=now_cost;
 
   // Update ego and other dominace grids
@@ -1110,7 +1123,9 @@ void ExplorationFSM::optTimerCallback(const ros::TimerEvent& e) {
 
   // Reserve the result and wait...
   auto ed = expl_manager_->ed_;
+  //if(ego_ids.size()>0)
   ed->ego_ids_ = ego_ids;
+  //if(other_ids.size()>0)
   ed->other_ids_ = other_ids;
   ed->pair_opt_stamp_ = opt.stamp;
   ed->wait_response_ = true;
@@ -1141,13 +1156,16 @@ void ExplorationFSM::optMsgCallback(const exploration_manager::PairOptConstPtr& 
     // No opt attempt recently, and the grid info between drones are consistent, the pair opt
     // request can be accepted
     response.status = 1;
-
+    cout<<"sdasxasxasdasfas"<<endl;
     // Update from the opt result
     state1.grid_ids_.clear();
     state2.grid_ids_.clear();//cout<<"sdalfasfa1: ";
+    //if(msg->ego_ids.size()>0){
     for (auto id : msg->ego_ids) {state1.grid_ids_.push_back(id);}//cout<<endl;cout<<"sdalfasfa12: ";
+   // }
+    //if(msg->other_ids.size()>0){
     for (auto id : msg->other_ids) {;state2.grid_ids_.push_back(id);}//cout<<endl;
-
+   // }
     state1.recent_interact_time_ = msg->stamp;
     state2.recent_attempt_time_ = ros::Time::now().toSec();
     expl_manager_->ed_->reallocated_ = true;
@@ -1180,7 +1198,7 @@ void ExplorationFSM::optResMsgCallback(
 
   ed->wait_response_ = false;
   ROS_WARN("get response %d", int(msg->status));
-
+    cout<<"  sdasfasfas"<<endl;
   if (msg->status != 1) return;  // Receive 1 for valid opt
   auto& state1 = ed->swarm_state_[getId() - 1];
   auto& state2 = ed->swarm_state_[msg->from_drone_id - 1];

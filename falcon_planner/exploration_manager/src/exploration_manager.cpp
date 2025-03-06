@@ -173,26 +173,42 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
   cost_mat_id_to_cell_center_id.clear();
   // cost mat computation
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::COARSE);
-  vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
-
+ 
   // hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
   // if(cost_matrix2.rows() <= 1&&ed_->frontiers_.size()!=0){
   //   cout<<"sfafgasgaga"<<grid.size()<<endl;
   //   hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
   //     cost_mat_id_to_cell_center_id);
   // }
-  if(grid.size()==0){
-    hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,
-      cost_mat_id_to_cell_center_id);
+  if(first_init){
+    for(int i=0;i<36;i++) ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(i);
+    first_init=false;
+  }
+  vector<int> grid=ed_->swarm_state_[ep_->drone_id_-1].grid_ids_;
+  //换成哈希表 可以对于已经探索完的地方动态去除
+  if(grid.size()==0){ 
+    hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,cost_mat_id_to_cell_center_id);
   }
   else{
+   
     hierarchical_grid_->calculateCostMatrix2fromcells({pos},{vel},grid,cost_matrix2,cost_mat_id_to_cell_center_id);
   }
+  // if(cost_matrix2.rows() <= 1){
+  //   hierarchical_grid_->calculateCostMatrix2(pos, vel, yaw[0], ed_->grid_tour2_, cost_matrix2,cost_mat_id_to_cell_center_id);
+  // }
   PathCostEvaluator::astar_->setProfile(Astar::PROFILE::DEFAULT);
 
   double hgrid_cost_matrix2_time = (ros::Time::now() - t1).toSec();
   double hgrid_tsp2_time = 0.0;
-
+  cout<<"gird_info"<<endl;
+  for(auto x:hierarchical_grid_->uniform_grids_[0].uniform_grid_){
+    cout<<x.id_<<" "<<x.centers_free_.size()<<" "<<x.centers_free_active_.size()<<" "
+    <<x.centers_unknown_.size()<<" "<<x.centers_unknown_active_.size()<<endl;
+  }
+  cout<<"active:";
+  for(auto x:hierarchical_grid_->uniform_grids_[0].active_cell_ids_){
+    cout<<x<<"  ";
+  }cout<<endl;
   vector<int> tsp_indices;
 /*
 @@@@acc
@@ -200,8 +216,8 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
 */
   if (cost_matrix2.rows() <= 1) {
     //ROS_WARN("[ExplorationManager] Cost matrix 2 size: %d", cost_matrix2.rows());
-    if(ed_->frontiers_.size()==0) return NO_GRID;
-    if(grid.size()!=0) return SLEEPT;
+   // if(ed_->frontiers_.size()==0) return  SLEEPT;// NO_GRID;
+    //if(grid.size()!=0) return SLEEPT;
     return FAIL;
   } else if (cost_matrix2.rows() == 2) {
     ed_->grid_tour2_.clear();
@@ -248,9 +264,10 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
     hierarchical_grid_->getLayerPositionCellCenterId(0,pos,id,tem);
     //cout<<"sfashfgkashgka:"<<id<<"  "<<tem<<endl;
      //&&&&&
-    ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
+    //ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.clear();
     unordered_set<int> settt;
-    
+    cout<<"tspsgasgsagas:"<<id<<"  "<<grid.size()<<"  ";
+
     for (int i = 0; i < indices.size(); ++i) {
     /*
     @@@@
@@ -277,11 +294,11 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       //            next_cell_id, next_center_id);  
       }
       //&&&&&
-  
-      if(settt.find(cell_id)==settt.end()){
-        ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
-          settt.insert(cell_id);
-        }
+      // cout<<cell_id<<" ";
+      // if(settt.find(cell_id)==settt.end()){
+      //   ed_->swarm_state_[ep_->drone_id_-1].grid_ids_.push_back(cell_id);
+      //     settt.insert(cell_id);
+      //   }
       
 
 
@@ -293,7 +310,7 @@ int ExplorationManager::planExploreMotionHGrid(const Vector3d &pos, const Vector
       // Record cost for each segment
       grid_tour2_cost[i] = ((int)(cost_matrix2(last_index, indices[i]) * 100)) / 100.0;
       last_index = indices[i];
-    } settt.clear();
+    } settt.clear();cout<<endl;
     tsp_indices = indices;cout<<endl;
 
     double grid_tour2_cost_sum = 0.0;
@@ -1778,12 +1795,14 @@ const int drone_num = positions.size();
 vector<int> unknown_nums;
 int capacity = 0;
 for (int i = 0; i < grid_ids.size(); ++i) {
-  int unum = hierarchical_grid_->getUnknownCellsNum(grid_ids[i]);
+  //hierarchical_grid_->uniform_grids_[0].uniform_grid_[grid_ids[i]].print();
+  int unum=hierarchical_grid_->uniform_grids_[0].uniform_grid_[grid_ids[i]].centers_unknown_.size()*100;
+  //int unum = hierarchical_grid_->getUnknownCellsNum(grid_ids[i]);
   unknown_nums.push_back(unum);
   capacity += unum;
 }
-
-capacity = capacity * 0.75 * 0.1;
+double cap=grid_ids.size()%2==0?0.51:(grid_ids.size()*1./2+1)/grid_ids.size()+0.1;
+capacity = capacity * cap * 0.1;
 // int prob_type;
 // if (grid_ids.size() >= 3)
 //   prob_type = 2;  // Use ACVRP

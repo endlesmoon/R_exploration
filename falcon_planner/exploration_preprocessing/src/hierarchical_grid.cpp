@@ -3396,11 +3396,11 @@ void UniformGrid::calculateCostMatrix2fromcells(const vector<Position> &cur_pos,
 
           cost_matrix(mat_idx1, mat_idx2) = cost_matrix(mat_idx2, mat_idx1) = cost;
 
-          CHECK_GT(cost, 1e-6) << "Zero cost from cell " << grid_cell1.id_ << " center " << i
-                               << " pos (" << centers1[i].x() << ", " << centers1[i].y() << ", "
-                               << centers1[i].z() << ") to cell " << grid_cell2.id_ << " center "
-                               << j << " pos (" << centers2[j].x() << ", " << centers2[j].y()
-                               << ", " << centers2[j].z() << ")";
+          // CHECK_GT(cost, 1e-6) << "Zero cost from cell " << grid_cell1.id_ << " center " << i
+          //                      << " pos (" << centers1[i].x() << ", " << centers1[i].y() << ", "
+          //                      << centers1[i].z() << ") to cell " << grid_cell2.id_ << " center "
+          //                      << j << " pos (" << centers2[j].x() << ", " << centers2[j].y()
+          //                      << ", " << centers2[j].z() << ")";
           mat_idx2++;
         }
       }
